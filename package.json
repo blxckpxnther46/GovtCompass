@@ -1,0 +1,22 @@
+{
+  "name": "govtcompass",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n client,server -c blue,green \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "npm run dev -w govtcompass-client",
+    "dev:server": "npm run dev -w govtcompass-server",
+    "install:all": "npm install",
+    "clean": "node -e \"const fs=require('fs'); for (const d of ['node_modules','client/node_modules','server/node_modules']){ if(fs.existsSync(d)) fs.rmSync(d,{recursive:true,force:true}); }\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
+
+
