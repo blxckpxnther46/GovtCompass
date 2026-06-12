@@ -5,6 +5,8 @@ import connectDB from './config/db.js';
 
 import { healthRouter } from './routes/health.routes.js';
 import schemeRouter from "./routes/scheme.routes.js";
+import recommendationRouter from "./routes/recommendation.routes.js";
+import metaRouter from "./routes/meta.routes.js";
 
 dotenv.config();
 
@@ -32,6 +34,11 @@ app.get('/', (req, res) => {
 
 app.use('/api', healthRouter);
 app.use("/api/schemes", schemeRouter);
+app.use(
+  "/api/recommendations",
+  recommendationRouter
+);
+app.use("/api/meta", metaRouter);
 
 // Basic 404
 app.use((req, res) => {
