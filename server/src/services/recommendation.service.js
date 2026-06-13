@@ -130,22 +130,37 @@ export const rankSchemes = (userProfile, schemes) => {
     .map((scheme) => {
       const result = calculateScore(userProfile, scheme);
       return {
-        _id: scheme._id,
-        scheme_name: scheme.scheme_name,
-        score: result.score,
-        matchPercentage: result.matchPercentage,
-        matched: result.matched,
-        failedCriteria: result.failedCriteria,
+        scheme_data: {
+          _id: scheme._id,
+          scheme_name: scheme.scheme_name,
+          ministry: scheme.ministry,
+          department: scheme.department,
+          beneficiary_type: scheme.beneficiary_type,
+          detailed_description: scheme.detailed_description,
+          benefits: scheme.benefits,
+          eligibility: scheme.eligibility,
+          application_mode: scheme.application_mode,
+          application_process: scheme.application_process,
+          documents_required: scheme.documents_required,
+          references: scheme.references,
+          scheme_open_date: scheme.scheme_open_date,
+        },
+        matching_data: {
+          score: result.score,
+          matchPercentage: result.matchPercentage,
+          matched: result.matched,
+          failedCriteria: result.failedCriteria,
+        }
       };
     })
-    .filter((scheme) => scheme.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .filter((scheme) => scheme.matching_data.matchPercentage >= 60)
+    .sort((a, b) => b.matching_data.score - a.matching_data.score);
 };
 
 export const attachAlternatives = (results, allSchemes) => {
   return results.map((r) => {
-    if (r.matchPercentage < 70) {
-      r.alternatives = findAlternatives(r.failedCriteria, allSchemes, r._id);
+    if (r.matching_data.matchPercentage < 70) {
+      r.matching_data.alternatives = findAlternatives(r.matching_data.failedCriteria, allSchemes, r.scheme_data._id);
     }
     return r;
   });
