@@ -1,17 +1,23 @@
 // server/src/controllers/analyze.controller.js
 
 import { Scheme } from "../models/Scheme.js";
+import { rankSchemes, attachAlternatives } from "../services/recommendation.service.js";
+import { fetchOpenRouter } from "../services/openrouter.service.js";
+import { CATEGORY_MAP, SUB_CATEGORY_MAP, TAG_MAP } from "../constants/category.mapping.js";
 
-// Maps goal answers → MongoDB category field values
+// Maps onboarding `goal` answers → scheme.categories[] values
 const GOAL_TO_CATEGORY = {
   "Scholarships & Education":    "Education & Learning",
+  "Education":                   "Education & Learning",
   "Healthcare Support":          "Health & Wellness",
   "Healthcare":                  "Health & Wellness",
+  "Health":                      "Health & Wellness",
   "Agriculture Support":         "Agriculture,Rural & Environment",
   "Agriculture":                 "Agriculture,Rural & Environment",
   "Business Funding":            "Business & Entrepreneurship",
   "Startup Support":             "Business & Entrepreneurship",
   "Business & Entrepreneurship": "Business & Entrepreneurship",
+  "Business":                    "Business & Entrepreneurship",
   "Housing & Welfare":           "Housing & Shelter",
   "Housing":                     "Housing & Shelter",
   "Employment":                  "Skills & Employment",
@@ -22,8 +28,108 @@ const GOAL_TO_CATEGORY = {
   "Social Welfare":              "Social welfare & Empowerment",
   "Transport":                   "Transport & Infrastructure",
   "Utility":                     "Utility & Sanitation",
+  "Sanitation":                  "Utility & Sanitation",
   "Science & Technology":        "Science, IT & Communications",
 };
+
+// Maps onboarding `goal` answers → scheme.sub_categories[] values
+const GOAL_TO_SUB_CATEGORY = {
+  "Scholarships & Education": "Scholarships and student finance",
+  "Skill Development":        "Training and Skill Up-gradation",
+  "Employment":               "Employment services and jobs",
+};
+
+// Maps onboarding `occupation` → scheme.tags[] values
+const OCCUPATION_TO_TAGS = {
+  "Student":       ["Student"],
+  "Farmer":        ["Farmer", "Agriculture"],
+  "Unemployed":    ["Unemployed", "Job Seeker"],
+  "Self Employed": ["Self Employed", "Entrepreneur"],
+  "Salaried":      ["Salaried"],
+  "Business":      ["Business", "Entrepreneur"],
+};
+
+// Maps onboarding `category` (caste) → scheme.tags[] values
+const CASTE_TO_TAGS = {
+  "SC":      ["SC", "Scheduled Caste", "Scheduled Castes"],
+  "ST":      ["ST", "Scheduled Tribe", "Scheduled Tribes"],
+  "OBC":     ["OBC", "Other Backward Class", "Other Backward Classes"],
+  "EWS":     ["EWS", "Economically Weaker Section"],
+  "General": ["General"],
+};
+
+// Maps onboarding `gender` → scheme.tags[] values
+const GENDER_TO_TAGS = {
+  "Female": ["Women", "Girl", "Female"],
+  "Male":   ["Male"],
+  "Other":  ["Transgender", "Third Gender"],
+};
+
+function buildProfileFromAnswers(answers) {
+  const {
+    state,
+    category: casteCategory, // "OBC" etc — this is caste, NOT scheme.categories
+    gender,
+    goal: rawGoal,
+    occupation: rawOccupation,
+    disability,
+    incomeRange,
+    ageRange,
+    educationLevel,
+  } = answers;
+
+  const goal = rawGoal || answers.primaryGoal || null;
+  const occupation = rawOccupation || answers.bestProfileType || null;
+
+  // --- Engine-facing fields ---
+
+  // profile.category must match scheme.categories[] — derived from goal
+  const schemeCategory =
+    GOAL_TO_CATEGORY[goal] ?? CATEGORY_MAP[goal] ?? null;
+
+  // profile.subCategory must match scheme.sub_categories[] — derived from goal
+  const schemeSubCategory =
+    GOAL_TO_SUB_CATEGORY[goal] ?? SUB_CATEGORY_MAP[goal] ?? null;
+
+  // profile.tags must match scheme.tags[] — assembled from caste, gender, occupation, disability
+  const tags = new Set();
+
+  (CASTE_TO_TAGS[casteCategory] || []).forEach((t) => tags.add(t));
+  (GENDER_TO_TAGS[gender] || []).forEach((t) => tags.add(t));
+  (OCCUPATION_TO_TAGS[occupation] || []).forEach((t) => tags.add(t));
+
+  if (disability && disability !== "No") {
+    (TAG_MAP["Disability Support"] || []).forEach((t) => tags.add(t));
+  }
+
+  if (ageRange === "60+" || ageRange === "55-60") {
+    (TAG_MAP["Senior Citizens"] || []).forEach((t) => tags.add(t));
+  }
+
+  const profile = {
+    // Display/passthrough fields (shown in response, not used by engine)
+    state:          state        ?? null,
+    gender,
+    incomeRange,
+    ageRange,
+    educationLevel,
+    occupation,
+    goal,
+    casteCategory:  casteCategory ?? null, // kept separately for display
+
+    // Engine-facing fields (must match scheme document field values)
+    category:    schemeCategory,    // → scheme.categories[]
+    subCategory: schemeSubCategory, // → scheme.sub_categories[]
+    tags:        [...tags],         // → scheme.tags[]
+  };
+
+  // Remove nulls/undefineds so engine doesn't score against missing fields
+  Object.keys(profile).forEach((k) => {
+    if (profile[k] == null || profile[k] === "") delete profile[k];
+  });
+
+  return profile;
+}
 
 async function analyzeController(req, res) {
   const session = req.session || {};
@@ -32,37 +138,21 @@ async function analyzeController(req, res) {
     ? { ...req.body }
     : { ...(session.answers || {}) };
 
-  // Step 1: Free text intake via AI
+  // Step 1: Free text intake
   if (answers.freeText) {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "openrouter/auto",
-          messages: [
-            {
-              role: "system",
-              content: `You are a profile extraction assistant for an Indian government scheme recommender.
-Extract structured fields from the user's free text. Return ONLY a JSON object with any of these fields if mentioned:
-{
-  "state": string,
-  "category": string,       // Caste: "SC" | "ST" | "OBC" | "EWS" | "General"
-  "gender": string,         // "Male" | "Female" | "Other"
-  "incomeRange": string,
-  "ageRange": string,
-  "educationLevel": string,
-  "occupation": string,     // "Student" | "Farmer" | "Job Seeker" | "Business Owner" | "Employee" | "Homemaker" | "Senior Citizen"
-  "goal": string
-}
-Only include fields you are confident about. Return nothing else.`
-            },
-            { role: "user", content: answers.freeText }
-          ]
-        })
+      const response = await fetchOpenRouter({
+        model: "openrouter/auto",
+        messages: [
+          {
+            role: "system",
+            content: `You are a profile extraction assistant for an Indian government scheme recommender.\nExtract structured fields from the user's free text. Return ONLY a JSON object with any of these fields if mentioned:\n{\n  "state": string,\n  "category": string,      // Caste: "SC" | "ST" | "OBC" | "EWS" | "General"\n  "gender": string,        // "Male" | "Female" | "Other"\n  "incomeRange": string,   // "0-5k" | "5k-10k" | "10k-25k" | "25k+"\n  "ageRange": string,      // "18-24" | "25-35" | "36-50" | "50-60" | "60+"\n  "educationLevel": string,// "Below 10th" | "10th" | "12th" | "Graduate" | "Postgraduate"\n  "occupation": string,    // "Student" | "Farmer" | "Unemployed" | "Self Employed" | "Salaried"\n  "goal": string           // "Scholarships & Education" | "Healthcare" | "Agriculture" | "Business & Entrepreneurship" | "Housing" | "Employment" | "Skill Development" | "Women Empowerment" | "Financial Assistance"\n}\nOnly include fields you are confident about. Return nothing else — no explanation, no markdown, no code fences.`
+          },
+          {
+            role: "user",
+            content: answers.freeText
+          }
+        ]
       });
 
       if (response.ok) {
@@ -70,203 +160,48 @@ Only include fields you are confident about. Return nothing else.`
         const text = data.choices[0].message.content.trim();
         const clean = text.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(clean);
+        // Merge extracted fields into answers — explicit fields take priority
         answers = { ...parsed, ...answers };
       }
-    } catch (err) { /* skip silently */ }
+    } catch (err) {
+      // Skip silently if AI call fails
+    }
   }
 
-  // Extract all profile fields from answers
-  const goal          = answers.goal || answers.primaryGoal || null;
-  const occupation    = answers.occupation || answers.bestProfileType || null;
-  const state         = answers.state || null;
-  const gender        = answers.gender || null;
-  const caste         = answers.category || answers.casteCategory || null;
-  const ageRange      = answers.ageRange || null;
-  const incomeRange   = answers.incomeRange || null;
-  const educationLevel = answers.educationLevel || null;
-  const disability    = answers.disability || null;
+  const profile = buildProfileFromAnswers(answers);
 
   const limit      = parseInt(req.query.limit) || 10;
   const page       = parseInt(req.query.page)  || 1;
   const startIndex = (page - 1) * limit;
+  const endIndex   = startIndex + limit;
 
   try {
-    // Step 2: Smart DB Query — get candidates from MongoDB
-    const schemeCategory = GOAL_TO_CATEGORY[goal] || null;
-
     const query = {};
-
-    // State filter: always include null-state (central govt) schemes
-    if (state) {
+    if (profile.state) {
       query.$or = [
-        { state: state },
+        { state: profile.state },
         { state: null },
         { state: { $exists: false } },
-        { state: "" },
+        { state: "" }
       ];
     }
-
-    // Category filter: use goal-derived category if available
-    if (schemeCategory) {
-      query.categories = schemeCategory;
-    }
-
-    let candidates = await Scheme.find(query).limit(100).lean();
-
-    // Fallback: if too few results, broaden to remove category filter
-    if (candidates.length < 20) {
-      const broadQuery = state
-        ? { $or: [{ state }, { state: null }, { state: { $exists: false } }, { state: "" }] }
-        : {};
-      candidates = await Scheme.find(broadQuery).limit(100).lean();
-    }
-
-    // Step 3: Pure AI ranking — let AI pick and score the best matches
-    const schemePayload = candidates.map(s => ({
-      id: s._id.toString(),
-      name: s.scheme_name,
-      categories: s.categories,
-      tags: s.tags,
-      eligibility: s.eligibility,
-      brief_description: s.brief_description,
-    }));
-
-    const userProfileDesc = [
-      state          ? `State: ${state}` : null,
-      goal           ? `Goal: ${goal}` : null,
-      occupation     ? `Occupation: ${occupation}` : null,
-      gender         ? `Gender: ${gender}` : null,
-      caste          ? `Caste/Category: ${caste}` : null,
-      ageRange       ? `Age Range: ${ageRange}` : null,
-      incomeRange    ? `Income Range: ${incomeRange}` : null,
-      educationLevel ? `Education Level: ${educationLevel}` : null,
-      disability && disability !== "No" ? `Has Disability: Yes` : null,
-    ].filter(Boolean).join("\n");
-
-    const systemPrompt = `You are an expert Indian government scheme eligibility advisor.
-Given a user profile and a list of government schemes, identify which schemes this user is eligible for or most likely to benefit from.
-
-For each relevant scheme, provide:
-- An eligibility score from 0 to 100
-- A list of matched criteria (why they qualify)
-- A list of failed criteria (why they might not qualify), if any
-
-Return ONLY valid JSON in exactly this format (no markdown, no preamble):
-{
-  "results": [
-    {
-      "id": "<scheme_id_string>",
-      "score": <number 0-100>,
-      "matched": ["<reason>", "<reason>"],
-      "failed": ["<reason>"]
-    }
-  ]
-}
-
-Rules:
-- Include ONLY schemes with score >= 40.
-- Return a maximum of 20 results, sorted by score descending.
-- Be inclusive: if a scheme broadly targets the user's occupation/goal, include it even if income/caste data is missing.
-- A farmer should match all agriculture, farming, livestock, fisheries, horticulture schemes.
-- A student should match all scholarship, education, youth schemes.`;
-
-    const userPrompt = `USER PROFILE:
-${userProfileDesc}
-
-SCHEMES TO EVALUATE (${schemePayload.length} total):
-${JSON.stringify(schemePayload)}`;
-
-    const aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/auto",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ]
-      })
-    });
-
-    if (!aiResponse.ok) throw new Error(`AI service error: ${aiResponse.status}`);
-
-    const aiData = await aiResponse.json();
-    const aiRaw = aiData.choices[0].message.content.trim();
-
-    let aiResults;
-    try {
-      aiResults = JSON.parse(aiRaw);
-    } catch (e) {
-      const match = aiRaw.match(/\{[\s\S]*\}/);
-      if (match) aiResults = JSON.parse(match[0]);
-      else throw new Error("Could not parse AI response as JSON");
-    }
-
-    const rankedByAI = (aiResults.results || []).sort((a, b) => b.score - a.score);
-
-    // Build full scheme response objects
-    const candidateMap = Object.fromEntries(candidates.map(s => [s._id.toString(), s]));
-
-    const recommendedSchemes = rankedByAI
-      .slice(startIndex, startIndex + limit)
-      .map(r => {
-        const scheme = candidateMap[r.id];
-        if (!scheme) return null;
-        return {
-          scheme_data: {
-            _id: scheme._id,
-            scheme_name: scheme.scheme_name,
-            ministry: scheme.ministry,
-            department: scheme.department,
-            beneficiary_type: scheme.beneficiary_type,
-            detailed_description: scheme.detailed_description,
-            benefits: scheme.benefits,
-            eligibility: scheme.eligibility,
-            application_mode: scheme.application_mode,
-            application_process: scheme.application_process,
-            documents_required: scheme.documents_required,
-            references: scheme.references,
-            brief_description: scheme.brief_description,
-            categories: scheme.categories,
-            tags: scheme.tags,
-          },
-          matching_data: {
-            score: r.score,
-            matchPercentage: r.score,
-            matched: r.matched || [],
-            failedCriteria: (r.failed || []).map(f => ({
-              field: "ai_scan",
-              expected: "Eligible",
-              actual: f,
-            })),
-          }
-        };
-      })
-      .filter(Boolean);
-
-    const profile = {
-      state, goal, occupation, gender,
-      casteCategory: caste,
-      ageRange, incomeRange, educationLevel,
-    };
+    const schemes = await Scheme.find(query);
+    const ranked           = rankSchemes(profile, schemes);
+    const paginated        = ranked.slice(startIndex, endIndex);
+    const withAlternatives = attachAlternatives(paginated, schemes);
 
     return res.status(200).json({
       success: true,
       message: "Analysis complete",
       profile,
-      recommendedSchemes,
+      recommendedSchemes: withAlternatives,
       page,
       limit,
-      total: rankedByAI.length,
-      totalPages: Math.ceil(rankedByAI.length / limit),
+      total:      ranked.length,
+      totalPages: Math.ceil(ranked.length / limit),
     });
 
   } catch (err) {
-    console.error("[analyzeController Error]:", err.message);
     res.status(500).json({
       success: false,
       message: err.message || "Analysis failed",

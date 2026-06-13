@@ -39,8 +39,8 @@ export const calculateScore = (
     } else {
       failedCriteria.push({
         field: "category",
-        expected: scheme.categories?.length ? `Requires Category: ${scheme.categories.join(", ")}` : "Category mismatch",
-        actual: userProfile.category
+        expected: userProfile.category,
+        actual: scheme.categories || []
       });
     }
   }
@@ -53,8 +53,8 @@ export const calculateScore = (
     } else {
       failedCriteria.push({
         field: "subCategory",
-        expected: scheme.sub_categories?.length ? `Requires Sub-Category: ${scheme.sub_categories.join(", ")}` : "Sub-Category mismatch",
-        actual: userProfile.subCategory
+        expected: userProfile.subCategory,
+        actual: scheme.sub_categories || []
       });
     }
   }
@@ -70,28 +70,86 @@ export const calculateScore = (
 
   matchingTags.forEach((tag) => matched.push(`Tag: ${tag}`));
 
-  // Restrictive Tag Checking
-  const RESTRICTIVE_TAG_GROUPS = [
-    ["Women", "Girl", "Female", "Male", "Transgender", "Third Gender"],
-    ["Farmer", "Agriculture"],
-    ["Student", "Scholarship", "Education"],
-    ["Disability Support"],
-    ["Senior Citizens"]
+  // Restrictive Tag Checking (defines what they fail)
+  const RESTRICTIVE_GROUPS = [
+    {
+      name: "Gender",
+      tags: ["Women", "Girl", "Female", "Transgender", "Third Gender", "Male"],
+      describeMismatch: (schemeTags) => {
+        const allowed = schemeTags.filter(t => ["Women", "Girl", "Female", "Transgender", "Third Gender", "Male"].includes(t));
+        return `Requires Gender: ${allowed.join(" or ")}`;
+      }
+    },
+    {
+      name: "Caste",
+      tags: ["SC", "Scheduled Caste", "Scheduled Castes", "ST", "Scheduled Tribe", "Scheduled Tribes", "OBC", "Other Backward Class", "Other Backward Classes", "EWS", "Economically Weaker Section", "General"],
+      describeMismatch: (schemeTags) => {
+        const allowed = schemeTags.filter(t => ["SC", "ST", "OBC", "EWS", "General", "Scheduled Caste", "Scheduled Tribe", "Other Backward Class", "Economically Weaker Section"].includes(t));
+        const normalized = allowed.map(t => {
+          if (t.includes("Scheduled Caste")) return "SC";
+          if (t.includes("Scheduled Tribe")) return "ST";
+          if (t.includes("Other Backward")) return "OBC";
+          if (t.includes("Economically Weaker")) return "EWS";
+          return t;
+        });
+        const unique = [...new Set(normalized)];
+        return `Requires Category: ${unique.join(" or ")}`;
+      }
+    },
+    {
+      name: "Occupation",
+      tags: ["Farmer", "Agriculture", "Student", "Scholarship", "Education", "Self Employed", "Entrepreneur", "Business", "Unemployed", "Job Seeker", "Salaried", "Employee", "Homemaker", "Senior Citizen"],
+      describeMismatch: (schemeTags) => {
+        const allowed = schemeTags.filter(t => ["Farmer", "Agriculture", "Student", "Scholarship", "Education", "Self Employed", "Entrepreneur", "Business", "Unemployed", "Job Seeker", "Salaried", "Employee", "Homemaker", "Senior Citizen"].includes(t));
+        const normalized = allowed.map(t => {
+          if (t === "Agriculture") return "Farmer";
+          if (t === "Scholarship" || t === "Education") return "Student";
+          if (t === "Entrepreneur" || t === "Business") return "Business Owner";
+          if (t === "Job Seeker") return "Unemployed";
+          if (t === "Employee") return "Salaried";
+          return t;
+        });
+        const unique = [...new Set(normalized)];
+        return `Requires Occupation: ${unique.join(" or ")}`;
+      }
+    }
   ];
 
-  RESTRICTIVE_TAG_GROUPS.forEach(group => {
-    const schemeRequiresGroup = (scheme.tags || []).filter(t => group.includes(t));
-    if (schemeRequiresGroup.length > 0) {
-      const userHasTag = schemeRequiresGroup.some(t => userTags.includes(t));
-      if (!userHasTag) {
+  RESTRICTIVE_GROUPS.forEach(group => {
+    const schemeHasGroup = (scheme.tags || []).some(t => group.tags.includes(t));
+    if (schemeHasGroup) {
+      const userHasGroupMatch = (scheme.tags || []).some(t => group.tags.includes(t) && userTags.includes(t));
+      if (!userHasGroupMatch) {
         failedCriteria.push({
           field: "tag",
-          expected: `Requires: ${schemeRequiresGroup.join(" or ")}`,
-          actual: "Mismatch"
+          expected: group.describeMismatch(scheme.tags || []),
+          actual: scheme.tags || []
         });
       }
     }
   });
+
+  // Disability Support check
+  const schemeRequiresDisability = (scheme.tags || []).some(t => ["Person With Disabilities", "Person With Disability", "Persons With Disability", "PwD"].includes(t));
+  const userHasDisability = userTags.some(t => ["Person With Disabilities", "Person With Disability", "Persons With Disability", "PwD"].includes(t));
+  if (schemeRequiresDisability && !userHasDisability) {
+    failedCriteria.push({
+      field: "tag",
+      expected: "Requires: Disability Support",
+      actual: scheme.tags || []
+    });
+  }
+
+  // Senior Citizens check
+  const schemeRequiresSenior = (scheme.tags || []).some(t => ["Senior Citizens", "Old Age Pension", "Pension", "Family Pension"].includes(t));
+  const userHasSenior = userTags.some(t => ["Senior Citizens", "Old Age Pension", "Pension", "Family Pension"].includes(t));
+  if (schemeRequiresSenior && !userHasSenior) {
+    failedCriteria.push({
+      field: "tag",
+      expected: "Requires: Senior Citizen status",
+      actual: scheme.tags || []
+    });
+  }
 
   // Beneficiary
   if (userProfile.beneficiaryType) {
@@ -101,8 +159,8 @@ export const calculateScore = (
     } else {
       failedCriteria.push({
         field: "beneficiaryType",
-        expected: scheme.beneficiary_type ? `Requires Beneficiary: ${scheme.beneficiary_type}` : "Beneficiary mismatch",
-        actual: userProfile.beneficiaryType
+        expected: userProfile.beneficiaryType,
+        actual: scheme.beneficiary_type
       });
     }
   }
@@ -118,8 +176,8 @@ export const calculateScore = (
   else {
     failedCriteria.push({
       field: "state",
-      expected: scheme.state ? `Requires State: ${scheme.state}` : "State mismatch",
-      actual: userProfile.state
+      expected: userProfile.state,
+      actual: scheme.state
     });
   }
 
@@ -164,6 +222,7 @@ export const rankSchemes = (userProfile, schemes) => {
         }
       };
     })
+    .filter((scheme) => scheme.matching_data.matchPercentage >= 60)
     .sort((a, b) => b.matching_data.score - a.matching_data.score);
 };
 
@@ -174,91 +233,4 @@ export const attachAlternatives = (results, allSchemes) => {
     }
     return r;
   });
-};
-
-export const aiDeepScan = async (profile, candidateSchemes) => {
-  if (!candidateSchemes || candidateSchemes.length === 0) return [];
-  
-  const payloadSchemes = candidateSchemes.map(s => ({
-    id: s.scheme_data._id,
-    name: s.scheme_data.scheme_name,
-    eligibility: s.scheme_data.eligibility
-  }));
-
-  const systemPrompt = `You are a strict eligibility adjudicator for Indian government schemes.
-Evaluate each scheme against the user's profile. Pay close attention to numeric constraints like income and age, as well as category/caste matching.
-Return a valid JSON object mapping EACH scheme's ID to its analysis.
-Schema:
-{
-  "scheme_id": {
-    "score": <number 0-100, 100=perfect match, 0=hard fail>,
-    "failedCriteria": [<list of strings of what they fail, empty if 100>]
-  }
-}
-CRITICAL: You must return an entry for EVERY scheme ID provided. Respond ONLY with valid JSON. No markdown formatting.`;
-
-  const userPrompt = `User Profile:
-${JSON.stringify(profile, null, 2)}
-
-Schemes to evaluate:
-${JSON.stringify(payloadSchemes, null, 2)}
-`;
-
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/auto",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ]
-      })
-    });
-    
-    if (!response.ok) throw new Error("AI deep scan HTTP error");
-    
-    const data = await response.json();
-    let raw = data.choices[0].message.content.trim();
-    
-    // Parse JSON
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch(e) {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-      else throw new Error("Unparseable AI response");
-    }
-
-    // Merge results
-    return candidateSchemes.map(s => {
-      const aiData = parsed[s.scheme_data._id.toString()];
-      if (aiData) {
-        // Only modify if AI scored it, otherwise keep heuristic score
-        s.matching_data.score = aiData.score;
-        s.matching_data.matchPercentage = aiData.score;
-        
-        if (aiData.failedCriteria && aiData.failedCriteria.length > 0) {
-          s.matching_data.failedCriteria = aiData.failedCriteria.map(fail => ({
-             field: "ai_scan",
-             expected: "Eligible",
-             actual: fail
-          }));
-        } else {
-          s.matching_data.failedCriteria = [];
-        }
-      }
-      return s;
-    }).sort((a, b) => b.matching_data.score - a.matching_data.score);
-
-  } catch(e) {
-    console.error("[AI Deep Scan Error]:", e.message);
-    return candidateSchemes; // gracefully fallback to heuristic
-  }
 };

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { analyzeController } from '../controllers/analyze.controller.js';
+import { validateSessionMiddleware } from '../middleware/validateSession.middleware.js';
 
 const analyzeRouter = Router();
 
-// No session middleware — answers are sent in the request body directly
-analyzeRouter.post('/analyze', analyzeController);
+analyzeRouter.post('/analyze', validateSessionMiddleware, analyzeController);
 
 export { analyzeRouter };

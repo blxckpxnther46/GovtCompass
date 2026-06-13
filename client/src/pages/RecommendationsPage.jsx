@@ -13,7 +13,7 @@ const getBriefDesc = (scheme) => {
 // Loading messages sequence
 const LOADING_MESSAGES = [
   "Decrypting secure session...",
-  "Cross-referencing 50+ Schemes...",
+  "Cross-referencing 1500+ Schemes...",
   "Calculating weighted match scores...",
   "Generating AI Eligibility Analysis...",
   "Finalizing case files..."
@@ -265,6 +265,8 @@ export default function RecommendationsPage() {
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [fetchingPage, setFetchingPage] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -275,40 +277,11 @@ export default function RecommendationsPage() {
     setResults(null);
   };
 
-  const fetchResults = async () => {
+  const fetchResults = async (pageNumber = currentPage) => {
     try {
-      // Bootstrap: pull server-side session answers into localStorage cache
-      // This handles the case where the user went through the questionnaire
-      // before we added local caching, or after a server restart.
-      try {
-        const sessionData = await getCurrentSession();
-        if (sessionData?.data?.answers && Object.keys(sessionData.data.answers).length > 0) {
-          const existing = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
-          const merged = { ...sessionData.data.answers, ...existing };
-          localStorage.setItem('cachedAnswers', JSON.stringify(merged));
-        }
-      } catch(e) { /* session may be invalid — rely on cachedAnswers */ }
-
-      const data = await getRecommendationsFromSession();
+      setFetchingPage(true);
+      const data = await getRecommendationsFromSession(pageNumber, 10);
       
-      // Cache the returned profile back to localStorage so restarts don't break future re-scans
-      if (data?.profile) {
-        const p = data.profile;
-        const toCache = {};
-        if (p.state)         toCache.state = p.state;
-        if (p.goal)          toCache.goal = p.goal;
-        if (p.occupation)    toCache.occupation = p.occupation;
-        if (p.gender)        toCache.gender = p.gender;
-        if (p.casteCategory) toCache.category = p.casteCategory;
-        if (p.ageRange)      toCache.ageRange = p.ageRange;
-        if (p.incomeRange)   toCache.incomeRange = p.incomeRange;
-        if (p.educationLevel) toCache.educationLevel = p.educationLevel;
-        if (Object.keys(toCache).length > 0) {
-          const existing = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
-          localStorage.setItem('cachedAnswers', JSON.stringify({ ...existing, ...toCache }));
-        }
-      }
-
       if (sessionStorage.getItem('hasSeenLoading')) {
         setResults(data);
         setLoading(false);
@@ -323,6 +296,22 @@ export default function RecommendationsPage() {
       console.error(err);
       setError("Failed to generate recommendations. Please try again.");
       setLoading(false);
+    } finally {
+      setFetchingPage(false);
+    }
+  };
+
+  const handlePageChange = async (pageNumber) => {
+    setCurrentPage(pageNumber);
+    try {
+      setFetchingPage(true);
+      const data = await getRecommendationsFromSession(pageNumber, 10);
+      setResults(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFetchingPage(false);
+      window.scrollTo(0, 0);
     }
   };
 
@@ -333,13 +322,14 @@ export default function RecommendationsPage() {
       setLoadingMsgIdx((prev) => (prev < LOADING_MESSAGES.length - 1 ? prev + 1 : prev));
     }, 500);
 
-    fetchResults();
+    fetchResults(currentPage);
 
     return () => clearInterval(msgInterval);
   }, [loading]);
 
   const handleSaveProfile = async (newProfile) => {
     setIsEditModalOpen(false);
+    setCurrentPage(1);
     
     // 1. Submit each field and await so we don't trigger a fetch before saving!
     for (const [key, value] of Object.entries(newProfile)) {
@@ -425,7 +415,7 @@ export default function RecommendationsPage() {
       <div className="flex-grow max-w-7xl mx-auto w-full p-6 md:p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-bold leading-tight">
-            {recommendedSchemes?.length || 0} Schemes Matched
+            {results?.total || 0} Schemes Matched
           </h1>
           <p className="text-[var(--text-muted)] mt-1 text-sm font-medium">Ranked by highest eligibility score.</p>
         </div>
@@ -445,10 +435,8 @@ export default function RecommendationsPage() {
               
               return (
                 <div key={scheme._id || idx} className="relative bg-white border border-black/10 rounded-2xl p-6 flex flex-col animate-fade-in-up hover:shadow-md transition-shadow" style={{ animationDelay: `${idx * 100}ms`, opacity: 0, animationFillMode: 'forwards' }}>
-                  
 
-
-                  <div className="pr-12 mb-4">
+                  <div className="mb-4">
                     <div className="text-[9px] font-mono font-bold tracking-widest text-[var(--gold)] uppercase mb-1">
                       {scheme.categories?.[0] || scheme.ministry || 'Govt of India'}
                     </div>
@@ -499,7 +487,7 @@ export default function RecommendationsPage() {
                   {/* View Details Section (Bottom Attached) */}
                   <div className="mt-6 pt-4 border-t border-black/5">
                     <button 
-                      onClick={() => navigate(`/scheme/${scheme._id}`, { state: { scheme, score, passed, failed } })}
+                      onClick={() => navigate(`/scheme/${scheme._id}`, { state: { scheme, score, passed, failed, profile } })}
                       className="w-full text-xs font-bold font-mono tracking-widest text-[var(--text)] bg-[var(--surface-2)] border border-black/10 px-4 py-2.5 rounded-lg hover:bg-[var(--text)] hover:text-white transition-all"
                     >
                       VIEW FULL DETAILS ➔
@@ -509,6 +497,28 @@ export default function RecommendationsPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {results?.totalPages > 1 && (
+          <div className="mt-12 flex justify-center items-center space-x-4">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || fetchingPage}
+              className="px-4 py-2 bg-white border border-black/10 rounded-lg text-xs font-bold font-mono tracking-wider hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm"
+            >
+              ◀ PREV
+            </button>
+            <span className="text-xs font-mono font-bold text-[var(--text-muted)]">
+              Page {currentPage} of {results.totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === results.totalPages || fetchingPage}
+              className="px-4 py-2 bg-white border border-black/10 rounded-lg text-xs font-bold font-mono tracking-wider hover:bg-[var(--surface-2)] disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm"
+            >
+              NEXT ▶
+            </button>
           </div>
         )}
       </div>

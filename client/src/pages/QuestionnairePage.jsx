@@ -66,6 +66,7 @@ export default function QuestionnairePage() {
   useEffect(() => {
     async function initSession() {
       try {
+        sessionStorage.removeItem('hasSeenLoading');
         await createSession();
         const res = await getAllQuestions();
         if (res.success && res.data.questions) {

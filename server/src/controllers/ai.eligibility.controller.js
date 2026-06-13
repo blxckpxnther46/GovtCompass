@@ -1,3 +1,5 @@
+import { fetchOpenRouter } from "../services/openrouter.service.js";
+
 export const aiEligibilityController = async (req, res) => {
   const { schemeId, failedCriteria, profile } = req.body;
   if (!schemeId || !failedCriteria || !profile) {
@@ -5,19 +7,13 @@ export const aiEligibilityController = async (req, res) => {
   }
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/auto",
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `You are an eligibility advisor for Indian government schemes. Be specific, actionable, and empathetic. Speak directly to the user.
+    const response = await fetchOpenRouter({
+      model: "openrouter/auto",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an eligibility advisor for Indian government schemes. Be specific, actionable, and empathetic. Speak directly to the user.
 
 You must respond ONLY with a valid JSON object, no markdown, no preamble, no code fences. Do not use markdown formatting (no **, no [], no links) inside any of the text values - plain text only.
 
@@ -28,10 +24,10 @@ The JSON object must have exactly this shape:
 }
 
 Keep each bullet point to one sentence. Provide 1-3 reasons and 2-4 next steps.`
-          },
-          {
-            role: "user",
-            content: `A user is interested in a government scheme but doesn't fully qualify. Based on the gap analysis below, list out why they do not qualify and what concrete steps they could take to find a better match or become eligible.
+        },
+        {
+          role: "user",
+          content: `A user is interested in a government scheme but doesn't fully qualify. Based on the gap analysis below, list out why they do not qualify and what concrete steps they could take to find a better match or become eligible.
 
 IMPORTANT - How to read the Gap Analysis:
 - "expected" is the attribute the USER has in their profile.
@@ -43,9 +39,8 @@ ${JSON.stringify(failedCriteria, null, 2)}
 
 User profile:
 ${JSON.stringify(profile, null, 2)}`
-          }
-        ]
-      })
+        }
+      ]
     });
 
     if (!response.ok) throw new Error("AI service unavailable");

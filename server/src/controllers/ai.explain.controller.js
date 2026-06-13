@@ -1,4 +1,5 @@
 import { Scheme } from "../models/Scheme.js";
+import { fetchOpenRouter } from "../services/openrouter.service.js";
 
 export const aiExplainController = async (req, res) => {
   const { schemeId } = req.body;
@@ -18,28 +19,22 @@ export const aiExplainController = async (req, res) => {
       });
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "openrouter/auto",
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert at simplifying Indian government schemes for citizens. Read the provided scheme details and rewrite them into very simple, human-readable bullet points.
+    const response = await fetchOpenRouter({
+      model: "openrouter/auto",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert at simplifying Indian government schemes for citizens. Read the provided scheme details and rewrite them into very simple, human-readable bullet points.
 CRITICAL INSTRUCTIONS:
 1. You MUST return a valid JSON object.
 2. The JSON object MUST have exactly these four keys: "overview", "benefits", "eligibility", and "applicationProcess".
 3. Each key MUST contain an array of strings (bullet points).
 4. Keep the language extremely simple (5th-grade reading level). No bureaucratic jargon.`
-          },
-          {
-            role: "user",
-            content: `Simplify this scheme into JSON:
+        },
+        {
+          role: "user",
+          content: `Simplify this scheme into JSON:
 Scheme Name: ${scheme.scheme_name}
 Description: ${scheme.detailed_description || scheme.description || "Not provided"}
 Benefits: ${scheme.benefits || "Not provided"}
@@ -47,9 +42,8 @@ Eligibility: ${scheme.eligibility || "Not provided"}
 Application Process: ${scheme.application_process || "Not provided"}
 Categories: ${scheme.categories?.join(", ") || ""}
 Tags: ${scheme.tags?.join(", ") || ""}`
-          }
-        ]
-      })
+        }
+      ]
     });
 
     if (!response.ok) throw new Error("AI service unavailable");

@@ -4,46 +4,9 @@ import { Scheme } from "../models/Scheme.js";
 import {
   rankSchemes,
   attachAlternatives,
-  calculateScore
 } from "../services/recommendation.service.js";
 import { CATEGORY_MAP, SUB_CATEGORY_MAP, TAG_MAP } from "../constants/category.mapping.js";
 
-export const scoreSingleScheme = async (req, res) => {
-  try {
-    const { schemeId, profile } = req.body;
-    if (!schemeId || !profile) return res.status(400).json({ success: false, message: "schemeId and profile required" });
-
-    const scheme = await Scheme.findById(schemeId);
-    if (!scheme) return res.status(404).json({ success: false, message: "Scheme not found" });
-
-    const userProfile = { ...profile };
-
-    // Normalize
-    if (userProfile.category && CATEGORY_MAP[userProfile.category]) {
-      userProfile.category = CATEGORY_MAP[userProfile.category];
-    }
-    if (userProfile.subCategory && SUB_CATEGORY_MAP[userProfile.subCategory]) {
-      userProfile.subCategory = SUB_CATEGORY_MAP[userProfile.subCategory];
-    }
-    if (userProfile.category && TAG_MAP[userProfile.category]) {
-      userProfile.tags = [...(userProfile.tags || []), ...TAG_MAP[userProfile.category]];
-    }
-
-    const result = calculateScore(userProfile, scheme);
-
-    res.status(200).json({
-      success: true,
-      matching_data: {
-        score: result.score,
-        matchPercentage: result.matchPercentage,
-        matched: result.matched,
-        failedCriteria: result.failedCriteria
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
 
 export const recommendSchemes = async (
   req,
@@ -57,16 +20,7 @@ export const recommendSchemes = async (
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     
-    const query = {};
-    if (userProfile.state) {
-      query.$or = [
-        { state: userProfile.state },
-        { state: null },
-        { state: { $exists: false } },
-        { state: "" }
-      ];
-    }
-    const schemes = await Scheme.find(query);
+    const schemes = await Scheme.find();
 
     // Normalize user profile using category and sub-category mappings
     if (userProfile.category && CATEGORY_MAP[userProfile.category]) {
@@ -85,7 +39,7 @@ export const recommendSchemes = async (
     if (userProfile.state && Array.isArray(userProfile.tags)) {
       userProfile.tags = userProfile.tags.filter(tag => tag !== userProfile.state);
     }
-
+    
     const ranked = rankSchemes(userProfile, schemes);
     const paginated = ranked.slice(startIndex, endIndex);
     const withAlternatives = attachAlternatives(paginated, schemes);

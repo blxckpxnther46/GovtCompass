@@ -60,7 +60,8 @@ export default function SchemeDetailPage() {
 
   // If passed from RecommendationsPage
   const initialPassed = location.state?.passed || null;
-  const initialFailed = location.state?.failed || null;
+  const initialFailed = location.state?.failed || [];
+  const profile = location.state?.profile || null;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -142,10 +143,21 @@ export default function SchemeDetailPage() {
   const handleCheckEligibility = async () => {
     if (!hasProfileData) return;
     
+    if (!initialFailed || initialFailed.length === 0) {
+      setEligibilityResult({
+        success: true,
+        advice: {
+          reasons: [],
+          nextSteps: []
+        }
+      });
+      return;
+    }
+    
     setIsCheckingEligibility(true);
     setEligibilityError(null);
     try {
-      const gapRes = await analyzeEligibilityGap(id, initialFailed || [], {});
+      const gapRes = await analyzeEligibilityGap(id, initialFailed, profile || {});
       if (gapRes.success && gapRes.advice) {
         setEligibilityResult(gapRes);
       } else {

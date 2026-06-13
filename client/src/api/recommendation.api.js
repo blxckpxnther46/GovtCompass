@@ -15,12 +15,7 @@ export const scoreSingleScheme = async (schemeId, profile) => {
   return response.data.matching_data;
 };
 
-export const getRecommendationsFromSession = async () => {
-  // Send cached answers as body so server always has data, even after a restart
-  let cachedAnswers = {};
-  try {
-    cachedAnswers = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
-  } catch(e) {}
-  const response = await api.post('/api/analyze', cachedAnswers);
+export const getRecommendationsFromSession = async (page = 1, limit = 10) => {
+  const response = await api.post(`/api/analyze?page=${page}&limit=${limit}`, {});
   return response.data;
 };
