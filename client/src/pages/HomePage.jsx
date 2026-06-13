@@ -26,7 +26,22 @@ export default function HomePage() {
         err?.response?.data?.message ||
         err?.message ||
         'Failed to connect to backend';
-      setStatus({ loading: false, data: null, error: message });
+
+      const statusCode = err?.response?.status;
+      const requestedUrl = (() => {
+        const baseURL = err?.config?.baseURL;
+        const url = err?.config?.url;
+        if (!baseURL && !url) return undefined;
+        if (baseURL && url) return `${baseURL}${url}`;
+        return baseURL || url;
+      })();
+
+      const detailsParts = [];
+      if (statusCode) detailsParts.push(`HTTP ${statusCode}`);
+      if (requestedUrl) detailsParts.push(requestedUrl);
+
+      const details = detailsParts.length ? ` (${detailsParts.join(' - ')})` : '';
+      setStatus({ loading: false, data: null, error: `${message}${details}` });
     }
   };
 
