@@ -459,50 +459,52 @@ export default function HomePage() {
 
       
       {/* 7. FOOTER */}
-      <footer className="bg-[var(--bg-dark)] text-[var(--text-on-dark)] border-t border-black/15 py-12 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-8">
-          <div className="space-y-3">
-            <div className="text-lg font-bold font-display tracking-tight text-[var(--text-on-dark)]">Govt Compass</div>
-            <p className="text-xs text-[var(--text-muted-on-dark)] max-w-sm leading-relaxed font-medium">
-              Transparent, secure, and eligibility-driven portal matching Indian government schemes without tracking.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 md:gap-16">
-            <div>
-              <h4 className="text-xs font-mono text-[var(--gold)] uppercase font-bold tracking-widest mb-3">Links</h4>
-              <ul className="space-y-2 text-xs text-[var(--text-muted-on-dark)] font-medium">
-                <li>
-                  <button onClick={() => handleScroll(finderRef)} className="hover:text-[var(--gold)] transition">
-                    Finder Form
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => handleScroll(infoRef)} className="hover:text-[var(--gold)] transition">
-                    How it works
-                  </button>
-                </li>
-              </ul>
+      <footer className="bg-[var(--bg-dark)] text-[var(--text-on-dark)] border-t border-black/15 py-12">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between gap-8">
+            <div className="space-y-3">
+              <div className="text-lg font-bold font-display tracking-tight text-[var(--text-on-dark)]">Govt Compass</div>
+              <p className="text-xs text-[var(--text-muted-on-dark)] max-w-sm leading-relaxed font-medium">
+                Transparent, secure, and eligibility-driven portal matching Indian government schemes without tracking.
+              </p>
             </div>
 
-            <div>
-              <h4 className="text-xs font-mono text-[var(--gold)] uppercase font-bold tracking-widest mb-3">Project</h4>
-              <ul className="space-y-2 text-xs text-[var(--text-muted-on-dark)] font-medium">
-                <li>
-                  <a href="https://github.com/blxckpxnther46/GovtCompass" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] transition">
-                    GitHub Repo
-                  </a>
-                </li>
-                <li>
-                  <span className="text-[var(--gold)] font-semibold font-mono">KSquad 128</span>
-                </li>
-              </ul>
+            <div className="grid grid-cols-2 gap-8 md:gap-16">
+              <div>
+                <h4 className="text-xs font-mono text-[var(--gold)] uppercase font-bold tracking-widest mb-3">Links</h4>
+                <ul className="space-y-2 text-xs text-[var(--text-muted-on-dark)] font-medium">
+                  <li>
+                    <button onClick={() => handleScroll(finderRef)} className="hover:text-[var(--gold)] transition">
+                      Finder Form
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => handleScroll(infoRef)} className="hover:text-[var(--gold)] transition">
+                      How it works
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-mono text-[var(--gold)] uppercase font-bold tracking-widest mb-3">Project</h4>
+                <ul className="space-y-2 text-xs text-[var(--text-muted-on-dark)] font-medium">
+                  <li>
+                    <a href="https://github.com/blxckpxnther46/GovtCompass" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] transition">
+                      GitHub Repo
+                    </a>
+                  </li>
+                  <li>
+                    <span className="text-[var(--gold)] font-semibold font-mono">KSquad 128</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-white/5 text-center md:text-left text-xs text-[var(--text-muted-on-dark)] font-medium">
-          © {new Date().getFullYear()} Govt Compass. 
+          <div className="pt-8 mt-8 border-t border-white/5 text-center md:text-left text-xs text-[var(--text-muted-on-dark)] font-medium">
+            © {new Date().getFullYear()} Govt Compass. 
+          </div>
         </div>
       </footer>
     </div>
