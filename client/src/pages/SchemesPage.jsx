@@ -70,7 +70,8 @@ export default function SchemesPage() {
   const fetchSchemes = async () => {
     setLoading(true);
     try {
-      const res = await getSchemes(1, 100, filters);
+      // Fetch up to 5000 schemes to support full-database client-side pagination
+      const res = await getSchemes(1, 5000, filters);
       setSchemes(res.data || []);
     } catch (e) {
       console.error(e);
@@ -150,15 +151,15 @@ export default function SchemesPage() {
                   <button type="button" onClick={() => setSearchMode('describe')} className={`px-3 py-1.5 text-xs font-bold font-mono uppercase tracking-widest rounded-md transition-colors flex items-center ${searchMode === 'describe' ? 'bg-[var(--gold)] text-white shadow-sm' : 'text-[var(--text-muted)]'}`}>Describe ✦</button>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <input 
                   type="text" 
                   placeholder={searchMode === 'describe' ? "I am a 25 yr old farmer from UP..." : "Search schemes..."} 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-80 bg-white border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)] shadow-sm"
+                  className="flex-grow w-full md:w-80 bg-white border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)] shadow-sm"
                 />
-                <button type="submit" className="bg-[var(--text)] text-white px-4 py-2 rounded-lg text-xs font-bold font-mono tracking-widest uppercase hover:bg-black/80 transition-colors">
+                <button type="submit" className="whitespace-nowrap bg-[var(--text)] text-white px-4 py-2 rounded-lg text-xs font-bold font-mono tracking-widest uppercase hover:bg-black/80 transition-colors">
                   {searchMode === 'describe' ? 'AI Search' : 'Search'}
                 </button>
               </div>
@@ -166,8 +167,8 @@ export default function SchemesPage() {
           </div>
 
           {/* Filters Row */}
-          <div className="flex items-center space-x-4 border-t border-black/5 pt-6">
-            <span className="text-xs font-bold font-mono uppercase tracking-widest text-[var(--text-muted)] mt-1">Filters:</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-black/5 pt-6 mt-2">
+            <span className="text-xs font-bold font-mono uppercase tracking-widest text-[var(--text-muted)]">Filters:</span>
             
             <CustomDropdown 
               value={filters.state}

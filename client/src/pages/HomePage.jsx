@@ -502,7 +502,7 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-white/5 text-center md:text-left text-xs text-[var(--text-muted-on-dark)] font-medium">
-          © {new Date().getFullYear()} Govt Compass. Built in accordance with MeitY/NeGD UX4G patterns.
+          © {new Date().getFullYear()} Govt Compass. 
         </div>
       </footer>
     </div>

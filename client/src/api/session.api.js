@@ -21,10 +21,20 @@ export const createSession = async () => {
 
 export const submitAnswer = async (questionId, answer) => {
   const response = await api.post('/api/session/answer', { questionId, answer });
+  // Also cache answers locally so server restarts don't lose data
+  try {
+    const cached = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
+    cached[questionId] = answer;
+    localStorage.setItem('cachedAnswers', JSON.stringify(cached));
+  } catch(e) {}
   return response.data;
 };
 
 export const getCurrentSession = async () => {
   const response = await api.get('/api/session/me');
   return response.data;
+};
+
+export const clearCachedAnswers = () => {
+  localStorage.removeItem('cachedAnswers');
 };

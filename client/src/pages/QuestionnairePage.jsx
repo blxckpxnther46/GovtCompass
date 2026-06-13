@@ -228,8 +228,8 @@ export default function QuestionnairePage() {
         
         {/* Absolute Back Button */}
         {history.length > 0 && (
-          <div className="absolute top-0 left-0 p-8 md:p-12 z-20">
-            <button onClick={handleBack} className="text-[var(--text-muted)] hover:text-[var(--text)] text-xs font-bold tracking-widest uppercase font-mono transition-colors">
+          <div className="absolute top-0 left-0 p-4 md:p-12 z-20">
+            <button onClick={handleBack} className="text-[var(--text-muted)] hover:text-[var(--text)] text-xs font-bold tracking-widest uppercase font-mono transition-colors bg-[var(--surface)]/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-black/10 md:bg-transparent md:border-none md:p-0">
               ← Back
             </button>
           </div>
@@ -244,7 +244,7 @@ export default function QuestionnairePage() {
 
         <div 
           key={currentQ.id}
-          className={`w-full max-w-xl transform transition-all duration-300 ${isExiting ? 'opacity-0 -translate-y-8' : 'animate-fade-in-up'}`}
+          className={`w-full max-w-xl transform transition-all duration-300 pt-16 md:pt-0 ${isExiting ? 'opacity-0 -translate-y-8' : 'animate-fade-in-up'}`}
         >
           {/* Question Text */}
           <h1 className="text-xl md:text-2xl font-display font-bold leading-snug mb-6 text-[var(--text)]">
