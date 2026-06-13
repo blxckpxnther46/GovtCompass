@@ -148,7 +148,7 @@ export default function SchemesPage() {
               <div className="flex justify-end">
                 <div className="bg-[var(--surface-2)] p-1 rounded-lg border border-black/10 flex">
                   <button type="button" onClick={() => setSearchMode('search')} className={`px-3 py-1.5 text-xs font-bold font-mono uppercase tracking-widest rounded-md transition-colors ${searchMode === 'search' ? 'bg-white shadow-sm text-black' : 'text-[var(--text-muted)]'}`}>Search</button>
-                  <button type="button" onClick={() => setSearchMode('describe')} className={`px-3 py-1.5 text-xs font-bold font-mono uppercase tracking-widest rounded-md transition-colors flex items-center ${searchMode === 'describe' ? 'bg-[var(--gold)] text-white shadow-sm' : 'text-[var(--text-muted)]'}`}>Describe ✦</button>
+                  <button type="button" disabled className="px-3 py-1.5 text-xs font-bold font-mono uppercase tracking-widest rounded-md opacity-40 cursor-not-allowed text-[var(--text-muted)]">Describe ✦</button>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
