@@ -20,7 +20,16 @@ export const recommendSchemes = async (
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     
-    const schemes = await Scheme.find();
+    const query = {};
+    if (userProfile.state) {
+      query.$or = [
+        { state: userProfile.state },
+        { state: null },
+        { state: { $exists: false } },
+        { state: "" }
+      ];
+    }
+    const schemes = await Scheme.find(query);
 
     // Normalize user profile using category and sub-category mappings
     if (userProfile.category && CATEGORY_MAP[userProfile.category]) {
