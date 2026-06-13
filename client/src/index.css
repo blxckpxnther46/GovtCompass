@@ -2,3 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: #F1ECDF;
+  --bg-dark: #1B3A2B;
+  --surface: #FFFFFF;
+  --surface-2: #ECE4D2;
+
+  --text: #1B2A21;
+  --text-muted: #6B6356;
+
+  --text-on-dark: #F1ECDF;
+  --text-muted-on-dark: #A8BBA9;
+
+  --gold: #D98F2B;
+  --tape: #B5453E;
+  --ok: #5F8767;
+  
+  --scale: 1.0;
+}
+
+.gc-contrast {
+  --bg: #FFFFFF;
+  --bg-dark: #000000;
+  --surface: #FFFFFF;
+  --surface-2: #F0F0F0;
+  
+  --text: #000000;
+  --text-muted: #333333;
+  
+  --text-on-dark: #FFFFFF;
+  --text-muted-on-dark: #CCCCCC;
+  
+  --gold: #B8860B;
+  --tape: #C0392B;
+  --ok: #006600;
+}
+
+@layer base {
+  html {
+    font-size: calc(16px * var(--scale));
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: Inter, "Noto Sans", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3 {
+    font-family: "Space Grotesk", sans-serif;
+  }
+}
+
+.font-mono {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.gc-stamp {
+  background: var(--bg-dark);
+  border: 2px dashed var(--gold);
+  color: var(--gold);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
