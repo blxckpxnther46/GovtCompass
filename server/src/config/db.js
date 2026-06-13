@@ -1,14 +1,22 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
+    if (!mongoUri || typeof mongoUri !== "string") {
+      console.warn(
+        "MongoDB not connected: missing MONGO_URI (or MONGODB_URI). Continuing without DB (schemes endpoints will fail)."
+      );
+      return;
+    }
+
+    const conn = await mongoose.connect(mongoUri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error("MongoDB Connection Error:", error.message);
-    process.exit(1);
+    // Don’t crash the whole API server for MVP testing (session/onboarding should still work)
   }
 };
 
-export default connectDB
+export default connectDB;
