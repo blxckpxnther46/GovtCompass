@@ -2,15 +2,18 @@
 
 import { Scheme } from "../models/Scheme.js";
 import {
-  generateRecommendations,
+  rankSchemes,
+  attachAlternatives,
 } from "../services/recommendation.service.js";
+import { CATEGORY_MAP, SUB_CATEGORY_MAP, TAG_MAP } from "../constants/category.mapping.js";
+
 
 export const recommendSchemes = async (
   req,
   res
 ) => {
   try {
-    const userProfile = req.body;
+    const userProfile = {...req.body};
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
@@ -19,24 +22,38 @@ export const recommendSchemes = async (
     
     const schemes = await Scheme.find();
 
-    const recommendations =
-      generateRecommendations(
-        userProfile,
-        schemes
-      );
-    const paginatedRecommendations = recommendations.slice(startIndex, endIndex);
-      
+    // Normalize user profile using category and sub-category mappings
+    if (userProfile.category && CATEGORY_MAP[userProfile.category]) {
+      userProfile.category = CATEGORY_MAP[userProfile.category];
+    }
+
+    if (userProfile.subCategory && SUB_CATEGORY_MAP[userProfile.subCategory]) {
+      userProfile.subCategory = SUB_CATEGORY_MAP[userProfile.subCategory];
+    }
+
+    if (userProfile.category && TAG_MAP[userProfile.category]) {
+      userProfile.tags = [...(userProfile.tags || []), ...TAG_MAP[userProfile.category]];
+    }
+
+    // Strip state value from tags to guard against accidental state in tags
+    if (userProfile.state && Array.isArray(userProfile.tags)) {
+      userProfile.tags = userProfile.tags.filter(tag => tag !== userProfile.state);
+    }
+
+    const ranked = rankSchemes(userProfile, schemes);
+    const paginated = ranked.slice(startIndex, endIndex);
+    const withAlternatives = attachAlternatives(paginated, schemes);
 
     res.status(200).json({
         success: true,
         page,
         limit,
-        total: recommendations.length,
+        total: ranked.length,
         totalPages: Math.ceil(
-            recommendations.length / limit
+            ranked.length / limit
         ),
-        count: paginatedRecommendations.length,
-        data: paginatedRecommendations,
+        count: withAlternatives.length,
+        data: withAlternatives,
     });
   } catch (error) {
     res.status(500).json({
