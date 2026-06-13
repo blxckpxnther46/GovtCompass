@@ -118,7 +118,3 @@ GovtCompass utilizes advanced AI capabilities to enhance the user experience:
 *   **Profile Extraction:** Uses AI to extract structured profile data from free-text user inputs.
 *   **Eligibility Scoring:** The core recommendation engine queries the database for potential matches and uses AI to read scheme descriptions and calculate an eligibility score (0-100) based on the user's specific context.
 *   **Conversational Q&A:** Allows users to ask follow-up questions about specific schemes, extracting answers directly from the official scheme data.
-
-## 📄 License
-
-This project is licensed under the MIT License.
