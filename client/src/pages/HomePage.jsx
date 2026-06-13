@@ -2,67 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { getRecommendationsFromProfile } from "../api/recommendation.api";
 import { explainScheme, analyzeEligibilityGap } from "../api/ai.api";
 
-// List of all Indian States
-const STATES = [
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal"
-];
 
-// Valid categories mapping to CATEGORY_MAP in backend mapping
-const CATEGORIES = [
-  "Education",
-  "Healthcare",
-  "Agriculture",
-  "Business",
-  "Startups",
-  "Housing",
-  "Employment",
-  "Skill Development",
-  "Women Empowerment",
-  "Financial Assistance",
-  "Transport",
-  "Utility",
-  "Sanitation",
-  "Science & Technology"
-];
 
-// Valid tag list options
-const TAG_OPTIONS = [
-  "Student",
-  "Women",
-  "Senior Citizen",
-  "Farmer",
-  "Person With Disability",
-  "Unemployed",
-  "Entrepreneur",
-  "Pensioner"
-];
 
 // Matched/Failed icons
 const CHECK_ICON = (
@@ -134,14 +75,6 @@ export default function HomePage() {
   const [scale, setScale] = useState(1.0);
   const [contrast, setContrast] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    state: "",
-    category: "",
-    subCategory: "",
-    beneficiaryType: "",
-    tags: []
-  });
 
   // Search results state
   const [loading, setLoading] = useState(false);
@@ -242,25 +175,7 @@ export default function HomePage() {
     setError(null);
   };
 
-  // Lazy-load AI scheme explanation
-  const fetchExplanation = async (schemeId) => {
-    if (explanations[schemeId] || loadingExplanations[schemeId]) return;
-
-    setLoadingExplanations((prev) => ({ ...prev, [schemeId]: true }));
-    try {
-      const res = await explainScheme(schemeId);
-      if (res?.success && res?.explanation) {
-        setExplanations((prev) => ({ ...prev, [schemeId]: res.explanation }));
-      } else {
-        setExplanations((prev) => ({ ...prev, [schemeId]: "No AI explanation available." }));
-      }
-    } catch (err) {
-      console.error(err);
-      setExplanations((prev) => ({ ...prev, [schemeId]: "Failed to retrieve AI explanation. Ensure OpenRouter is configured." }));
-    } finally {
-      setLoadingExplanations((prev) => ({ ...prev, [schemeId]: false }));
-    }
-  };
+ 
 
   // Lazy-load AI Eligibility Gap Analysis
   const fetchGapAnalysis = async (schemeId, failedCriteria) => {
@@ -348,9 +263,7 @@ export default function HomePage() {
       {/* 2. HERO SECTION */}
       <section className="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12 items-center flex-grow">
         <div className="space-y-6">
-          <div className="inline-block px-3 py-1 bg-[var(--surface-2)] border border-black/5 rounded-full text-xs font-mono text-[var(--text-muted)] font-bold">
-            ⚡ UX4G-Inspired Scheme Engine
-          </div>
+          
           <h1 className="text-4xl md:text-5xl font-bold leading-tight font-display tracking-tight text-[var(--text)]">
             Government schemes, matched like a <span className="underline decoration-[var(--gold)] decoration-4 underline-offset-4">case file</span>.
           </h1>
@@ -449,325 +362,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. FILE 03: FINDER FORM */}
-      <section ref={finderRef} className="bg-[var(--bg-dark)] text-[var(--text-on-dark)] border-t border-black/15 py-16 px-6 scroll-mt-12">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-2 border-b border-[var(--text-muted-on-dark)]/20 pb-3 mb-8">
-            <span className="font-mono text-xs font-bold text-[var(--gold)] bg-black/35 px-2.5 py-1 rounded">
-              FILE 03
-            </span>
-            <h2 className="text-2xl font-bold font-display tracking-tight">
-              Scheme Recommendation Finder
-            </h2>
-          </div>
+      
 
-          <form onSubmit={handleSearch} className="bg-black/15 border border-white/5 rounded-2xl p-6 md:p-8 space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              
-              {/* Category */}
-              <div>
-                <label htmlFor="category" className="block text-xs font-mono font-bold tracking-widest text-[var(--gold)] uppercase mb-2">
-                  Category (Domain)
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full bg-[var(--bg)] text-[var(--text)] border border-black/10 rounded-lg px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-[var(--gold)] focus:outline-none transition"
-                >
-                  <option value="">Select Domain Category</option>
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* State */}
-              <div>
-                <label htmlFor="state" className="block text-xs font-mono font-bold tracking-widest text-[var(--gold)] uppercase mb-2">
-                  State
-                </label>
-                <select
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleInputChange}
-                  className="w-full bg-[var(--bg)] text-[var(--text)] border border-black/10 rounded-lg px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-[var(--gold)] focus:outline-none transition"
-                >
-                  <option value="">Central / All India</option>
-                  {STATES.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Sub Category */}
-              <div>
-                <label htmlFor="subCategory" className="block text-xs font-mono font-bold tracking-widest text-[var(--gold)] uppercase mb-2">
-                  Sub-Category / Scheme Tag (Optional)
-                </label>
-                <input
-                  type="text"
-                  id="subCategory"
-                  name="subCategory"
-                  placeholder="e.g. Scholarship, Loan, Pension"
-                  value={formData.subCategory}
-                  onChange={handleInputChange}
-                  className="w-full bg-[var(--bg)] text-[var(--text)] border border-black/10 rounded-lg px-3 py-2.5 text-sm font-medium placeholder-black/45 focus:ring-2 focus:ring-[var(--gold)] focus:outline-none transition"
-                />
-              </div>
-
-              {/* Beneficiary Type */}
-              <div>
-                <label htmlFor="beneficiaryType" className="block text-xs font-mono font-bold tracking-widest text-[var(--gold)] uppercase mb-2">
-                  Beneficiary Type
-                </label>
-                <select
-                  id="beneficiaryType"
-                  name="beneficiaryType"
-                  value={formData.beneficiaryType}
-                  onChange={handleInputChange}
-                  className="w-full bg-[var(--bg)] text-[var(--text)] border border-black/10 rounded-lg px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-[var(--gold)] focus:outline-none transition"
-                >
-                  <option value="">Select Beneficiary Type</option>
-                  <option value="Individual">Individual</option>
-                  <option value="Family">Family</option>
-                  <option value="Organization">Organization</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Tags (Multiselect Chips) */}
-            <div>
-              <label className="block text-xs font-mono font-bold tracking-widest text-[var(--gold)] uppercase mb-3">
-                Applicable Tags (Select All That Apply)
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {TAG_OPTIONS.map((tag) => {
-                  const selected = formData.tags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleTagToggle(tag)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition border ${
-                        selected
-                          ? "bg-[var(--gold)] text-black border-transparent shadow"
-                          : "bg-white/5 text-[var(--text-on-dark)] border-white/10 hover:bg-white/10"
-                      }`}
-                    >
-                      {tag} {selected && "✓"}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-4 border-t border-white/5 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold font-mono tracking-wider uppercase border border-white/20 hover:bg-white/5 transition"
-              >
-                Clear Filters
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[var(--gold)] text-black px-6 py-2.5 rounded-xl text-xs font-bold font-mono tracking-wider uppercase hover:opacity-90 active:translate-y-[1px] transition disabled:opacity-50"
-              >
-                {loading ? "Matching..." : "Find Opportunities"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* 6. DYNAMIC RESULTS LIST */}
-      <section ref={resultsRef} className="py-16 px-6 max-w-6xl mx-auto flex-grow scroll-mt-12">
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <div className="w-10 h-10 border-4 border-[var(--gold)] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-mono text-[var(--text-muted)]">Scanning index databases and evaluating criteria...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-[var(--tape)]/10 border border-[var(--tape)]/30 rounded-xl p-5 text-[var(--text)] text-sm font-medium mb-8">
-            <div className="font-mono text-xs uppercase font-bold text-[var(--tape)] mb-1">Retrieval Exception</div>
-            {error}
-          </div>
-        )}
-
-        {!loading && results && (
-          <div>
-            <div className="flex items-center justify-between border-b border-black/5 pb-3 mb-8">
-              <h2 className="text-2xl font-bold font-display tracking-tight">
-                Recommended Schemes ({results.total || 0})
-              </h2>
-              <span className="text-xs font-mono font-semibold text-[var(--text-muted)]">
-                Page {results.page} of {results.totalPages || 1}
-              </span>
-            </div>
-
-            {results.data && results.data.length === 0 ? (
-              <div className="bg-[var(--surface)] border border-black/10 rounded-2xl p-10 text-center shadow-sm">
-                <span className="text-4xl">📁</span>
-                <h3 className="text-lg font-bold font-display mt-4">No High Matches Found</h3>
-                <p className="text-sm text-[var(--text-muted)] mt-1 font-medium max-w-md mx-auto">
-                  We filter matching scores below 60%. Try broadening your category filters, adding/removing tags, or checking alternate states.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {results.data.map((item) => {
-                  const sData = item.scheme_data;
-                  const mData = item.matching_data;
-                  const schemeId = sData._id;
-
-                  return (
-                    <div
-                      key={schemeId}
-                      className="relative bg-[var(--surface)] border border-black/10 rounded-2xl p-6 md:p-8 shadow-sm transition hover:shadow-md overflow-hidden"
-                    >
-                      <Stamp value={mData.matchPercentage} />
-
-                      {/* Heading metadata */}
-                      <div className="text-xs font-mono text-[var(--text-muted)] space-x-2 border-b border-black/5 pb-2.5 mb-4 max-w-[calc(100%-100px)]">
-                        <span>{sData.ministry || "Ministry"}</span>
-                        <span>•</span>
-                        <span>{sData.department || "Department"}</span>
-                      </div>
-
-                      <h3 className="text-xl font-bold font-display text-[var(--text)] leading-snug tracking-tight pr-24">
-                        {sData.scheme_name}
-                      </h3>
-
-                      {sData.detailed_description && (
-                        <p className="text-xs text-[var(--text-muted)] mt-3 max-w-3xl leading-relaxed font-medium line-clamp-2">
-                          {sData.detailed_description}
-                        </p>
-                      )}
-
-                      {/* Criteria check lists */}
-                      <div className="mt-6 grid sm:grid-cols-2 gap-4">
-                        <div className="bg-[var(--bg)] p-3 rounded-lg border border-black/5">
-                          <div className="text-[10px] font-mono font-bold uppercase text-[var(--ok)] tracking-wider border-b border-[var(--ok)]/10 pb-1 mb-2">
-                            Matched Criteria
-                          </div>
-                          <ul className="text-xs text-[var(--text)] space-y-1.5 font-semibold">
-                            {mData.matched && mData.matched.length > 0 ? (
-                              mData.matched.map((matchStr, i) => (
-                                <li key={i} className="flex items-start">
-                                  {CHECK_ICON} {matchStr}
-                                </li>
-                              ))
-                            ) : (
-                              <li className="text-[var(--text-muted)] italic font-mono text-[10px]">None recorded</li>
-                            )}
-                          </ul>
-                        </div>
-
-                        <div className="bg-[var(--bg)] p-3 rounded-lg border border-black/5">
-                          <div className="text-[10px] font-mono font-bold uppercase text-[var(--tape)] tracking-wider border-b border-[var(--tape)]/10 pb-1 mb-2">
-                            Missing / Failed Criteria
-                          </div>
-                          <ul className="text-xs text-[var(--text)] space-y-1.5 font-semibold">
-                            {mData.failedCriteria && mData.failedCriteria.length > 0 ? (
-                              mData.failedCriteria.map((fail, i) => (
-                                <li key={i} className="flex items-start">
-                                  {CROSS_ICON} {fail.field === "tag" ? `Tag: ${fail.expected}` : `${fail.field}: expected ${fail.expected}`}
-                                </li>
-                              ))
-                            ) : (
-                              <li className="text-[var(--text-muted)] italic font-mono text-[10px]">None recorded (Perfect Fit)</li>
-                            )}
-                          </ul>
-                        </div>
-                      </div>
-
-                      {/* Alternatives if available */}
-                      {mData.alternatives && mData.alternatives.length > 0 && (
-                        <div className="mt-5 pt-4 border-t border-black/5 text-xs text-[var(--text-muted)] font-mono">
-                          <span className="text-[var(--gold)] font-bold uppercase">Alternatives Checklist:</span>
-                          <div className="mt-1 space-y-1">
-                            {mData.alternatives.map((alt) => (
-                              <div key={alt._id} className="text-xs">
-                                • <span className="font-semibold text-[var(--text)]">{alt.scheme_name}</span> ({alt.reason})
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Lazy Loading AI Accordions */}
-                      <div className="mt-6 pt-4 border-t border-black/5 flex flex-wrap gap-2">
-                        <button
-                          onClick={() => fetchExplanation(schemeId)}
-                          className="border border-black/10 bg-[var(--surface-2)] text-[var(--text)] px-4 py-2 rounded-xl text-xs font-bold font-mono tracking-wide hover:bg-black/5 transition"
-                        >
-                          {loadingExplanations[schemeId]
-                            ? "Explaining..."
-                            : explanations[schemeId]
-                            ? "Hide Description"
-                            : "AI Simple Explanation"}
-                        </button>
-
-                        {mData.failedCriteria && mData.failedCriteria.length > 0 && (
-                          <button
-                            onClick={() => fetchGapAnalysis(schemeId, mData.failedCriteria)}
-                            className="border border-black/10 bg-[var(--surface-2)] text-[var(--text)] px-4 py-2 rounded-xl text-xs font-bold font-mono tracking-wide hover:bg-black/5 transition"
-                          >
-                            {loadingAdvices[schemeId]
-                              ? "Analyzing..."
-                              : advices[schemeId]
-                              ? "Hide Gap Analysis"
-                              : "AI Actionable Gap Advice"}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Display lazy loaded elements */}
-                      {(explanations[schemeId] || advices[schemeId]) && (
-                        <div className="mt-4 space-y-3 bg-[var(--bg)] p-4 rounded-xl border border-black/5 animate-fadeIn">
-                          {explanations[schemeId] && (
-                            <div>
-                              <div className="text-[10px] font-mono uppercase text-[var(--gold)] font-bold tracking-wider mb-1">
-                                AI 3-Sentence Explanation
-                              </div>
-                              <p className="text-xs text-[var(--text)] leading-relaxed font-medium">
-                                {explanations[schemeId]}
-                              </p>
-                            </div>
-                          )}
-
-                          {advices[schemeId] && (
-                            <div className={explanations[schemeId] ? "pt-3 border-t border-black/5" : ""}>
-                              <div className="text-[10px] font-mono uppercase text-[var(--gold)] font-bold tracking-wider mb-1">
-                                AI Actionable Gap Advice
-                              </div>
-                              <p className="text-xs text-[var(--text)] leading-relaxed font-medium whitespace-pre-line">
-                                {advices[schemeId]}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
+      
       {/* 7. FOOTER */}
       <footer className="bg-[var(--bg-dark)] text-[var(--text-on-dark)] border-t border-black/15 py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-8">
@@ -799,7 +396,7 @@ export default function HomePage() {
               <h4 className="text-xs font-mono text-[var(--gold)] uppercase font-bold tracking-widest mb-3">Project</h4>
               <ul className="space-y-2 text-xs text-[var(--text-muted-on-dark)] font-medium">
                 <li>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] transition">
+                  <a href="https://github.com/blxckpxnther46/GovtCompass" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold)] transition">
                     GitHub Repo
                   </a>
                 </li>
