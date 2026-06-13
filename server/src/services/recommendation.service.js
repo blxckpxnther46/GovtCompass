@@ -164,7 +164,6 @@ export const rankSchemes = (userProfile, schemes) => {
         }
       };
     })
-    .filter((scheme) => scheme.matching_data.score >= 70 && scheme.matching_data.matchPercentage > 50)
     .sort((a, b) => b.matching_data.score - a.matching_data.score);
 };
 
@@ -175,4 +174,91 @@ export const attachAlternatives = (results, allSchemes) => {
     }
     return r;
   });
+};
+
+export const aiDeepScan = async (profile, candidateSchemes) => {
+  if (!candidateSchemes || candidateSchemes.length === 0) return [];
+  
+  const payloadSchemes = candidateSchemes.map(s => ({
+    id: s.scheme_data._id,
+    name: s.scheme_data.scheme_name,
+    eligibility: s.scheme_data.eligibility
+  }));
+
+  const systemPrompt = `You are a strict eligibility adjudicator for Indian government schemes.
+Evaluate each scheme against the user's profile. Pay close attention to numeric constraints like income and age, as well as category/caste matching.
+Return a valid JSON object mapping EACH scheme's ID to its analysis.
+Schema:
+{
+  "scheme_id": {
+    "score": <number 0-100, 100=perfect match, 0=hard fail>,
+    "failedCriteria": [<list of strings of what they fail, empty if 100>]
+  }
+}
+CRITICAL: You must return an entry for EVERY scheme ID provided. Respond ONLY with valid JSON. No markdown formatting.`;
+
+  const userPrompt = `User Profile:
+${JSON.stringify(profile, null, 2)}
+
+Schemes to evaluate:
+${JSON.stringify(payloadSchemes, null, 2)}
+`;
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "openrouter/auto",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ]
+      })
+    });
+    
+    if (!response.ok) throw new Error("AI deep scan HTTP error");
+    
+    const data = await response.json();
+    let raw = data.choices[0].message.content.trim();
+    
+    // Parse JSON
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch(e) {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error("Unparseable AI response");
+    }
+
+    // Merge results
+    return candidateSchemes.map(s => {
+      const aiData = parsed[s.scheme_data._id.toString()];
+      if (aiData) {
+        // Only modify if AI scored it, otherwise keep heuristic score
+        s.matching_data.score = aiData.score;
+        s.matching_data.matchPercentage = aiData.score;
+        
+        if (aiData.failedCriteria && aiData.failedCriteria.length > 0) {
+          s.matching_data.failedCriteria = aiData.failedCriteria.map(fail => ({
+             field: "ai_scan",
+             expected: "Eligible",
+             actual: fail
+          }));
+        } else {
+          s.matching_data.failedCriteria = [];
+        }
+      }
+      return s;
+    }).sort((a, b) => b.matching_data.score - a.matching_data.score);
+
+  } catch(e) {
+    console.error("[AI Deep Scan Error]:", e.message);
+    return candidateSchemes; // gracefully fallback to heuristic
+  }
 };

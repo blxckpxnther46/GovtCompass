@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRecommendationsFromSession } from '../api/recommendation.api';
-import { submitAnswer } from '../api/session.api';
+import { submitAnswer, getCurrentSession } from '../api/session.api';
 
 const getBriefDesc = (scheme) => {
   const desc = scheme.brief_description || scheme.description || scheme.detailed_description;
@@ -34,6 +34,40 @@ const CROSS_ICON = (
 
 
 
+const CustomDropdown = ({ value, options, onChange, label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="relative">
+      <button 
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="bg-white border border-black/10 rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-[var(--gold)] flex items-center justify-between shadow-sm hover:border-black/20 transition-colors w-full"
+      >
+        <span className="truncate">{options.find(o => o.value === value)?.label || label}</span>
+        <svg className={`w-4 h-4 ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
+          <ul className="absolute z-20 mt-1 w-full bg-white border border-black/10 rounded-lg shadow-lg max-h-60 overflow-auto py-1">
+            {options.map((opt) => (
+              <li 
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setIsOpen(false); }}
+                className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-[var(--surface-2)] transition-colors ${value === opt.value ? 'font-bold text-[var(--gold)] bg-[var(--surface-2)]' : 'text-[var(--text)]'}`}
+              >
+                {opt.label}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+};
+
 // Edit Modal Component
 function EditProfileModal({ isOpen, onClose, currentProfile, onSave }) {
   const [formData, setFormData] = useState({});
@@ -44,10 +78,20 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onSave }) {
     }
   }, [currentProfile]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -57,101 +101,149 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in-up">
-      <div className="bg-[var(--surface)] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-black/10">
-        <div className="p-6 border-b border-black/5 flex justify-between items-center">
+      <div className="bg-[var(--surface)] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-black/10 flex flex-col max-h-[90vh]">
+        <div className="p-6 border-b border-black/5 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-bold font-display">Edit Profile</h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--tape)] font-bold text-sm">✕</button>
         </div>
         
-        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar pb-48">
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">State</label>
-            <input name="state" value={formData.state || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]" />
+            <input value={formData.state || ''} onChange={(e) => handleChange('state', e.target.value)} className="w-full bg-white border border-black/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--gold)] shadow-sm" />
           </div>
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Primary Goal</label>
-            <select name="goal" value={formData.goal || formData.primaryGoal || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-              <option value="">Select Goal...</option>
-              <option value="Education/Scholarship">Education/Scholarship</option>
-              <option value="Business/Startup">Business/Startup</option>
-              <option value="Agriculture">Agriculture</option>
-              <option value="Healthcare/Medical">Healthcare/Medical</option>
-              <option value="Housing">Housing</option>
-              <option value="Pension/Social Security">Pension/Social Security</option>
-            </select>
+            <CustomDropdown 
+              value={formData.primaryGoal || formData.goal || ''} 
+              onChange={(val) => handleChange('primaryGoal', val)} 
+              label="Select Goal..."
+              options={[
+                { value: "Scholarships & Education", label: "Scholarships & Education" },
+                { value: "Healthcare Support", label: "Healthcare Support" },
+                { value: "Financial Assistance", label: "Financial Assistance" },
+                { value: "Housing & Welfare", label: "Housing & Welfare" },
+                { value: "Business Funding", label: "Business Funding" },
+                { value: "Startup Support", label: "Startup Support" },
+                { value: "Agriculture Support", label: "Agriculture Support" },
+                { value: "Skill Development", label: "Skill Development" },
+                { value: "Pension & Senior Benefits", label: "Pension & Senior Benefits" },
+                { value: "Women Empowerment", label: "Women Empowerment" }
+              ]} 
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Occupation</label>
-              <select name="bestProfileType" value={formData.bestProfileType || formData.occupation || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-                <option value="Student">Student</option>
-                <option value="Farmer">Farmer</option>
-                <option value="Unemployed">Unemployed</option>
-                <option value="Self Employed">Self Employed</option>
-                <option value="Salaried">Salaried</option>
-              </select>
+              <CustomDropdown 
+                value={formData.bestProfileType || formData.occupation || ''} 
+                onChange={(val) => handleChange('bestProfileType', val)} 
+                label="Select Occupation..."
+                options={[
+                  { value: "Student", label: "Student" },
+                  { value: "Farmer", label: "Farmer" },
+                  { value: "Business Owner", label: "Business Owner" },
+                  { value: "Job Seeker", label: "Job Seeker" },
+                  { value: "Employee", label: "Employee" },
+                  { value: "Homemaker", label: "Homemaker" },
+                  { value: "Senior Citizen", label: "Senior Citizen" },
+                  { value: "Other", label: "Other" }
+                ]} 
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Education Level</label>
-              <select name="educationLevel" value={formData.educationLevel || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-                <option value="">Select Level...</option>
-                <option value="No Formal Education">No Formal Education</option>
-                <option value="Primary School">Primary School</option>
-                <option value="High School">High School</option>
-                <option value="Undergraduate">Undergraduate</option>
-                <option value="Postgraduate">Postgraduate</option>
-              </select>
+              <CustomDropdown 
+                value={formData.educationLevel || ''} 
+                onChange={(val) => handleChange('educationLevel', val)} 
+                label="Select Level..."
+                options={[
+                  { value: "School", label: "School" },
+                  { value: "12th", label: "12th" },
+                  { value: "Diploma", label: "Diploma" },
+                  { value: "Undergraduate", label: "Undergraduate" },
+                  { value: "Postgraduate", label: "Postgraduate" },
+                  { value: "PhD", label: "PhD" }
+                ]} 
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Gender</label>
-              <select name="gender" value={formData.gender || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
+              <CustomDropdown 
+                value={formData.gender || ''} 
+                onChange={(val) => handleChange('gender', val)} 
+                label="Select Gender..."
+                options={[
+                  { value: "Male", label: "Male" },
+                  { value: "Female", label: "Female" },
+                  { value: "Other", label: "Other" },
+                  { value: "Prefer not to say", label: "Prefer not to say" }
+                ]} 
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Category (Caste)</label>
-              <select name="category" value={formData.casteCategory || formData.category || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-                <option value="General">General</option>
-                <option value="OBC">OBC</option>
-                <option value="SC">SC</option>
-                <option value="ST">ST</option>
-                <option value="EWS">EWS</option>
-              </select>
+              <CustomDropdown 
+                value={formData.category || formData.casteCategory || ''} 
+                onChange={(val) => handleChange('category', val)} 
+                label="Select Category..."
+                options={[
+                  { value: "General", label: "General" },
+                  { value: "OBC", label: "OBC" },
+                  { value: "SC", label: "SC" },
+                  { value: "ST", label: "ST" },
+                  { value: "EWS", label: "EWS" },
+                  { value: "Prefer not to say", label: "Prefer not to say" }
+                ]} 
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Age Range</label>
-              <select name="ageRange" value={formData.ageRange || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-                <option value="">Select Age...</option>
-                <option value="0-14">0-14</option>
-                <option value="15-24">15-24</option>
-                <option value="25-59">25-59</option>
-                <option value="60+">60+</option>
-              </select>
+              <CustomDropdown 
+                value={formData.ageRange || ''} 
+                onChange={(val) => handleChange('ageRange', val)} 
+                label="Select Age..."
+                options={[
+                  { value: "Below 18", label: "Below 18" },
+                  { value: "18 – 25", label: "18 – 25" },
+                  { value: "26 – 40", label: "26 – 40" },
+                  { value: "41 – 59", label: "41 – 59" },
+                  { value: "60+", label: "60+" }
+                ]} 
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Income Range</label>
-              <select name="incomeRange" value={formData.incomeRange || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-                <option value="">Select Income...</option>
-                <option value="Below ₹1 Lakh">Below ₹1 Lakh</option>
-                <option value="₹1 Lakh - ₹3 Lakhs">₹1 Lakh - ₹3 Lakhs</option>
-                <option value="₹3 Lakhs - ₹8 Lakhs">₹3 Lakhs - ₹8 Lakhs</option>
-                <option value="Above ₹8 Lakhs">Above ₹8 Lakhs</option>
-              </select>
+              <CustomDropdown 
+                value={formData.incomeRange || ''} 
+                onChange={(val) => handleChange('incomeRange', val)} 
+                label="Select Income..."
+                options={[
+                  { value: "Below ₹1.5 Lakh", label: "Below ₹1.5 Lakh" },
+                  { value: "₹1.5L – ₹3L", label: "₹1.5L – ₹3L" },
+                  { value: "₹3L – ₹5L", label: "₹3L – ₹5L" },
+                  { value: "₹5L – ₹8L", label: "₹5L – ₹8L" },
+                  { value: "₹8L – ₹12L", label: "₹8L – ₹12L" },
+                  { value: "Above ₹12L", label: "Above ₹12L" }
+                ]} 
+              />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Disability Status</label>
-            <select name="disability" value={formData.disability || ''} onChange={handleChange} className="w-full bg-[var(--surface-2)] border border-black/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-[var(--gold)]">
-              <option value="">Select...</option>
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-            </select>
+            <CustomDropdown 
+                value={formData.disability || ''} 
+                onChange={(val) => handleChange('disability', val)} 
+                label="Select..."
+                options={[
+                  { value: "No", label: "No" },
+                  { value: "Yes", label: "Yes" }
+                ]} 
+              />
           </div>
         </div>
 
@@ -185,7 +277,38 @@ export default function RecommendationsPage() {
 
   const fetchResults = async () => {
     try {
+      // Bootstrap: pull server-side session answers into localStorage cache
+      // This handles the case where the user went through the questionnaire
+      // before we added local caching, or after a server restart.
+      try {
+        const sessionData = await getCurrentSession();
+        if (sessionData?.data?.answers && Object.keys(sessionData.data.answers).length > 0) {
+          const existing = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
+          const merged = { ...sessionData.data.answers, ...existing };
+          localStorage.setItem('cachedAnswers', JSON.stringify(merged));
+        }
+      } catch(e) { /* session may be invalid — rely on cachedAnswers */ }
+
       const data = await getRecommendationsFromSession();
+      
+      // Cache the returned profile back to localStorage so restarts don't break future re-scans
+      if (data?.profile) {
+        const p = data.profile;
+        const toCache = {};
+        if (p.state)         toCache.state = p.state;
+        if (p.goal)          toCache.goal = p.goal;
+        if (p.occupation)    toCache.occupation = p.occupation;
+        if (p.gender)        toCache.gender = p.gender;
+        if (p.casteCategory) toCache.category = p.casteCategory;
+        if (p.ageRange)      toCache.ageRange = p.ageRange;
+        if (p.incomeRange)   toCache.incomeRange = p.incomeRange;
+        if (p.educationLevel) toCache.educationLevel = p.educationLevel;
+        if (Object.keys(toCache).length > 0) {
+          const existing = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
+          localStorage.setItem('cachedAnswers', JSON.stringify({ ...existing, ...toCache }));
+        }
+      }
+
       if (sessionStorage.getItem('hasSeenLoading')) {
         setResults(data);
         setLoading(false);
@@ -194,7 +317,7 @@ export default function RecommendationsPage() {
           setResults(data);
           setLoading(false);
           sessionStorage.setItem('hasSeenLoading', 'true');
-        }, 2500); // Artificial delay for effect
+        }, 2500);
       }
     } catch (err) {
       console.error(err);
@@ -217,21 +340,20 @@ export default function RecommendationsPage() {
 
   const handleSaveProfile = async (newProfile) => {
     setIsEditModalOpen(false);
-    sessionStorage.removeItem('hasSeenLoading');
-    triggerLoadingSequence();
     
-    // Submit each changed field to the session API
+    // 1. Submit each field and await so we don't trigger a fetch before saving!
     for (const [key, value] of Object.entries(newProfile)) {
-      if (results?.profile?.[key] !== value) {
-        try {
-          await submitAnswer(key, value);
-        } catch (e) {
-          console.error(`Failed to update ${key}`);
-        }
+      if (!value) continue;
+      try {
+        await submitAnswer(key, value);
+      } catch (e) {
+        console.error(`Failed to update ${key}`);
       }
     }
 
-    // After updating session, loading effect triggers fetchResults
+    // 2. Clear cache and trigger the animated refetch
+    sessionStorage.removeItem('hasSeenLoading');
+    triggerLoadingSequence();
   };
 
   if (loading) {
@@ -395,8 +517,15 @@ export default function RecommendationsPage() {
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 
         currentProfile={{
-           ...results?.profile,
-           category: results?.profile?.casteCategory || results?.profile?.category
+           state: results?.profile?.state,
+           primaryGoal: results?.profile?.primaryGoal || results?.profile?.goal,
+           bestProfileType: results?.profile?.bestProfileType || results?.profile?.occupation,
+           educationLevel: results?.profile?.educationLevel,
+           gender: results?.profile?.gender,
+           category: results?.profile?.category || results?.profile?.casteCategory,
+           ageRange: results?.profile?.ageRange,
+           incomeRange: results?.profile?.incomeRange,
+           disability: results?.profile?.disability
         }}
         onSave={handleSaveProfile}
       />

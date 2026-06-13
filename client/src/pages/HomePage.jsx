@@ -382,8 +382,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. FILE 02: WHY NO LOGIN */}
-      <section ref={privacyRef} className="py-16 px-6 max-w-6xl mx-auto">
+    {/* 4. FILE 02: WHY NO LOGIN */}
+      <section ref={privacyRef} className="py-16">
+        <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center space-x-3 border-b border-black/5 pb-4 mb-6">
           <span className="font-mono text-xs font-bold text-black/50 bg-[var(--surface-2)] border border-black/10 px-2.5 py-1.5 rounded">
             FILE 02
@@ -407,6 +408,7 @@ export default function HomePage() {
             </svg>
             SECURE CLIENT ROUTING
           </div>
+        </div>
         </div>
       </section>
 
@@ -457,7 +459,7 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-6xl mx-auto pt-8 mt-8 border-t border-white/5 text-center md:text-left text-xs text-[var(--text-muted-on-dark)] font-medium">
-          © {new Date().getFullYear()} Govt Compass. Built in accordance with MeitY/NeGD UX4G patterns.
+          © {new Date().getFullYear()} Govt Compass. 
         </div>
       </footer>
     </div>

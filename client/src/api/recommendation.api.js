@@ -1,7 +1,6 @@
 import { api } from './api';
 
 export const getRecommendationsFromAnswers = async (answers) => {
-  // Pass the raw answers object, not { answers }
   const response = await api.post('/api/analyze', answers);
   return response.data;
 };
@@ -17,6 +16,11 @@ export const scoreSingleScheme = async (schemeId, profile) => {
 };
 
 export const getRecommendationsFromSession = async () => {
-  const response = await api.post('/api/analyze');
+  // Send cached answers as body so server always has data, even after a restart
+  let cachedAnswers = {};
+  try {
+    cachedAnswers = JSON.parse(localStorage.getItem('cachedAnswers') || '{}');
+  } catch(e) {}
+  const response = await api.post('/api/analyze', cachedAnswers);
   return response.data;
 };
