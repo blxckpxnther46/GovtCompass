@@ -258,6 +258,20 @@ export default function HomePage() {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleMouse = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    e.currentTarget.style.setProperty(
+      "--x",
+      `${e.clientX - rect.left}px`
+    );
+
+    e.currentTarget.style.setProperty(
+      "--y",
+      `${e.clientY - rect.top}px`
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] font-sans flex flex-col">
       {/* 1. STICKY NAV BAND */}
@@ -313,11 +327,40 @@ export default function HomePage() {
           </p>
 
           <div className="pt-2 flex flex-wrap gap-4">
-              <button 
+              <button
                 onClick={() => navigate('/questionnaire')}
-                className="bg-[var(--text)] text-[var(--bg)] px-8 py-3.5 rounded-xl font-bold font-mono tracking-wider hover:opacity-80 hover:-translate-y-1 transition-all duration-200"
+                onMouseEnter={handleMouse}
+                onMouseLeave={handleMouse}
+                className="
+                  group relative overflow-hidden
+                  bg-[var(--text)] text-[var(--bg)]
+                  px-8 py-3.5 rounded-xl
+                  font-bold font-mono tracking-wider
+                  transition-all duration-300
+                  hover:-translate-y-1
+                "
               >
-                Find Schemes →
+                <span
+                  className="
+                    absolute
+                    w-0 h-0
+                    rounded-full
+                    bg-[var(--gold)]
+                    left-[var(--x)]
+                    top-[var(--y)]
+                    -translate-x-1/2
+                    -translate-y-1/2
+                    transition-all
+                    duration-500
+                    ease-out
+                    group-hover:w-[500px]
+                    group-hover:h-[500px]
+                  "
+                />
+
+                <span className="relative z-10 transition-colors duration-300 group-hover:text-[var(--bg-dark)]">
+                  Find Schemes →
+                </span>
               </button>
             <button
               onClick={() => handleScroll(infoRef)}
@@ -382,8 +425,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. FILE 02: WHY NO LOGIN */}
-      <section ref={privacyRef} className="py-16 px-6 max-w-6xl mx-auto">
+    {/* 4. FILE 02: WHY NO LOGIN */}
+      <section ref={privacyRef} className="py-16">
+        <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center space-x-3 border-b border-black/5 pb-4 mb-6">
           <span className="font-mono text-xs font-bold text-black/50 bg-[var(--surface-2)] border border-black/10 px-2.5 py-1.5 rounded">
             FILE 02
@@ -407,6 +451,7 @@ export default function HomePage() {
             </svg>
             SECURE CLIENT ROUTING
           </div>
+        </div>
         </div>
       </section>
 
