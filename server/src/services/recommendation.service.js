@@ -39,8 +39,8 @@ export const calculateScore = (
     } else {
       failedCriteria.push({
         field: "category",
-        expected: userProfile.category,
-        actual: scheme.categories || []
+        expected: scheme.categories?.length ? `Requires Category: ${scheme.categories.join(", ")}` : "Category mismatch",
+        actual: userProfile.category
       });
     }
   }
@@ -53,8 +53,8 @@ export const calculateScore = (
     } else {
       failedCriteria.push({
         field: "subCategory",
-        expected: userProfile.subCategory,
-        actual: scheme.sub_categories || []
+        expected: scheme.sub_categories?.length ? `Requires Sub-Category: ${scheme.sub_categories.join(", ")}` : "Sub-Category mismatch",
+        actual: userProfile.subCategory
       });
     }
   }
@@ -70,17 +70,28 @@ export const calculateScore = (
 
   matchingTags.forEach((tag) => matched.push(`Tag: ${tag}`));
 
-  const missingTags = userTags.filter(
-    (tag) => !scheme.tags?.includes(tag)
-  );
+  // Restrictive Tag Checking
+  const RESTRICTIVE_TAG_GROUPS = [
+    ["Women", "Girl", "Female", "Male", "Transgender", "Third Gender"],
+    ["Farmer", "Agriculture"],
+    ["Student", "Scholarship", "Education"],
+    ["Disability Support"],
+    ["Senior Citizens"]
+  ];
 
-  missingTags.forEach((tag) =>
-    failedCriteria.push({
-      field: "tag",
-      expected: tag,
-      actual: scheme.tags || [],
-    })
-  );
+  RESTRICTIVE_TAG_GROUPS.forEach(group => {
+    const schemeRequiresGroup = (scheme.tags || []).filter(t => group.includes(t));
+    if (schemeRequiresGroup.length > 0) {
+      const userHasTag = schemeRequiresGroup.some(t => userTags.includes(t));
+      if (!userHasTag) {
+        failedCriteria.push({
+          field: "tag",
+          expected: `Requires: ${schemeRequiresGroup.join(" or ")}`,
+          actual: "Mismatch"
+        });
+      }
+    }
+  });
 
   // Beneficiary
   if (userProfile.beneficiaryType) {
@@ -90,8 +101,8 @@ export const calculateScore = (
     } else {
       failedCriteria.push({
         field: "beneficiaryType",
-        expected: userProfile.beneficiaryType,
-        actual: scheme.beneficiary_type
+        expected: scheme.beneficiary_type ? `Requires Beneficiary: ${scheme.beneficiary_type}` : "Beneficiary mismatch",
+        actual: userProfile.beneficiaryType
       });
     }
   }
@@ -107,8 +118,8 @@ export const calculateScore = (
   else {
     failedCriteria.push({
       field: "state",
-      expected: userProfile.state,
-      actual: scheme.state
+      expected: scheme.state ? `Requires State: ${scheme.state}` : "State mismatch",
+      actual: userProfile.state
     });
   }
 
@@ -153,7 +164,7 @@ export const rankSchemes = (userProfile, schemes) => {
         }
       };
     })
-    .filter((scheme) => scheme.matching_data.matchPercentage >= 60)
+    .filter((scheme) => scheme.matching_data.score >= 70 && scheme.matching_data.matchPercentage > 50)
     .sort((a, b) => b.matching_data.score - a.matching_data.score);
 };
 

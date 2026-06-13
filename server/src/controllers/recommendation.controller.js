@@ -4,9 +4,46 @@ import { Scheme } from "../models/Scheme.js";
 import {
   rankSchemes,
   attachAlternatives,
+  calculateScore
 } from "../services/recommendation.service.js";
 import { CATEGORY_MAP, SUB_CATEGORY_MAP, TAG_MAP } from "../constants/category.mapping.js";
 
+export const scoreSingleScheme = async (req, res) => {
+  try {
+    const { schemeId, profile } = req.body;
+    if (!schemeId || !profile) return res.status(400).json({ success: false, message: "schemeId and profile required" });
+
+    const scheme = await Scheme.findById(schemeId);
+    if (!scheme) return res.status(404).json({ success: false, message: "Scheme not found" });
+
+    const userProfile = { ...profile };
+
+    // Normalize
+    if (userProfile.category && CATEGORY_MAP[userProfile.category]) {
+      userProfile.category = CATEGORY_MAP[userProfile.category];
+    }
+    if (userProfile.subCategory && SUB_CATEGORY_MAP[userProfile.subCategory]) {
+      userProfile.subCategory = SUB_CATEGORY_MAP[userProfile.subCategory];
+    }
+    if (userProfile.category && TAG_MAP[userProfile.category]) {
+      userProfile.tags = [...(userProfile.tags || []), ...TAG_MAP[userProfile.category]];
+    }
+
+    const result = calculateScore(userProfile, scheme);
+
+    res.status(200).json({
+      success: true,
+      matching_data: {
+        score: result.score,
+        matchPercentage: result.matchPercentage,
+        matched: result.matched,
+        failedCriteria: result.failedCriteria
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 export const recommendSchemes = async (
   req,

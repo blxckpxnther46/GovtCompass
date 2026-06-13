@@ -63,13 +63,14 @@ function buildProfileFromAnswers(answers) {
     state,
     category: casteCategory, // "OBC" etc — this is caste, NOT scheme.categories
     gender,
-    goal,
-    occupation,
     disability,
     incomeRange,
     ageRange,
     educationLevel,
   } = answers;
+  
+  const occupation = answers.occupation || answers.bestProfileType;
+  const goal = answers.goal || answers.primaryGoal;
 
   // --- Engine-facing fields ---
 

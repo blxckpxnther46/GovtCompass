@@ -4,15 +4,19 @@ import { Scheme } from "../models/Scheme.js";
 
 const getAllSchemes = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
+    const { page: pageQuery, limit: limitQuery, state, level } = req.query;
+    const page = parseInt(pageQuery) || 1;
+    const limit = parseInt(limitQuery) || 10;
     const skip = (page - 1) * limit;
 
+    const query = {};
+    if (state && state !== "All") query.state = state;
+    if (level && level !== "All") query.level = level;
+
     const [schemes, total] = await Promise.all([
-      Scheme.find()
+      Scheme.find(query)
         .select(
-            "scheme_name short_title level categories benefit_type state"
+            "scheme_name short_title level categories benefit_type state brief_description description detailed_description"
         )
         .sort({ scheme_name: 1 })
         .skip(skip)
@@ -60,15 +64,20 @@ const getSchemeById = async (req, res) => {
 };
 
 const searchSchemes = async (req, res) => {
-  const q = req.query.q || "";
+  const { q = "", state, level } = req.query;
 
-  const schemes = await Scheme.find({
+  const query = {
     $or: [
       { scheme_name: { $regex: q, $options: "i" } },
       { categories: { $regex: q, $options: "i" } },
       { tags: { $regex: q, $options: "i" } }
     ]
-  });
+  };
+
+  if (state && state !== "All") query.state = state;
+  if (level && level !== "All") query.level = level;
+
+  const schemes = await Scheme.find(query);
 
   res.json({
     success: true,
