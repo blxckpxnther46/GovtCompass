@@ -31,10 +31,15 @@ app.use(express.json());
 connectDB()
 
 
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const corsOrigins = [
+  'http://localhost:5173',
+  'https://govt-c0mpass.vercel.app',
+  process.env.CORS_ORIGIN
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: corsOrigins,
     credentials: true,
   })
 );
