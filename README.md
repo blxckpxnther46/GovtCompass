@@ -1,120 +1,363 @@
-# GovtCompass
+# Govt Compass 🧭
 
-GovtCompass is an intelligent, AI-powered platform designed to help citizens navigate and discover relevant Indian government schemes. By simply answering a few conversational questions, the platform's AI engine analyzes your profile and recommends the schemes you are most likely eligible for.
+> Discover government opportunities that matter to you.
 
-## 🌟 Key Features
+Govt Compass is an AI-powered government opportunity discovery platform that helps citizens find scholarships, grants, subsidies, welfare programs, healthcare benefits, startup support, agricultural schemes, and financial assistance programs relevant to their profile.
 
-*   **Conversational Onboarding:** A user-friendly, chat-like interface to collect user profile details (Occupation, Goal, State, Category, etc.).
-*   **AI-Driven Recommendations:** Powered by large language models (via OpenRouter), the engine intelligently matches your profile against a comprehensive database of government schemes, identifying both explicit and implicit eligibility criteria.
-*   **Deep Semantic Analysis:** Replaces rigid tag-matching with smart semantic scoring, ensuring that users (like Farmers or Students) find all relevant schemes even if specific database tags are missing.
-*   **Interactive Chat Assistant:** Includes an AI chat interface to ask specific questions about eligibility, application processes, and scheme details.
-*   **Modern Dashboard:** View tailored recommendations, profile snapshots, and detailed scheme breakdowns in a clean, responsive UI.
+Instead of forcing users to navigate multiple government portals and decode complex eligibility requirements, Govt Compass uses conversational onboarding, AI-powered reasoning, and semantic matching to connect users with opportunities they may actually qualify for.
 
-## 🛠️ Tech Stack
+Built for the Kalvium Hackathon.
 
-**Frontend:**
-*   React.js
-*   Vite
-*   Tailwind CSS
-*   Framer Motion (for animations)
-*   Lucide React (icons)
+---
 
-**Backend:**
-*   Node.js
-*   Express.js
-*   MongoDB & Mongoose
-*   OpenRouter API (for AI capabilities)
+## The Problem
 
-## 📁 Project Structure
+India has thousands of government schemes and welfare programs designed to support students, farmers, entrepreneurs, senior citizens, women, and underserved communities.
 
-The project is structured as a monorepo containing both the client and server applications.
+The challenge is not availability.
+
+The challenge is discoverability.
+
+Citizens often:
+
+* Don't know which schemes exist
+* Don't know where to search
+* Struggle to understand eligibility requirements
+* Miss opportunities because information is fragmented
+* Give up after navigating multiple government websites
+
+As a result, countless benefits remain underutilized despite being available.
+
+---
+
+## Our Solution
+
+Govt Compass flips the process.
+
+Instead of asking users to search for schemes, we ask users about themselves.
+
+Through a conversational onboarding flow, the platform understands a user's profile, goals, and requirements, then intelligently identifies opportunities that match their situation.
+
+Users can:
+
+* Discover relevant schemes
+* Understand benefits and eligibility
+* Explore application requirements
+* Ask questions through an AI assistant
+* Receive personalized recommendations
+
+All through a single platform.
+
+---
+
+# Key Features
+
+## Conversational Discovery
+
+Users are guided through a simple onboarding experience instead of filling lengthy forms.
+
+The system progressively builds a profile using conversational interactions.
+
+---
+
+## AI-Powered Matching Engine
+
+Govt Compass uses AI to understand:
+
+* User intent
+* Context
+* Eligibility requirements
+* Opportunity relevance
+
+This allows recommendations to go beyond simple keyword matching.
+
+---
+
+## Semantic Eligibility Analysis
+
+Traditional systems rely on exact tags.
+
+Govt Compass uses semantic understanding to identify opportunities that may be relevant even when explicit tags or keywords are missing.
+
+For example:
+
+A farmer searching for financial assistance may discover agricultural support programs even if the scheme description doesn't explicitly contain the exact terms entered by the user.
+
+---
+
+## Interactive AI Assistant
+
+Users can ask:
+
+* Am I eligible?
+* What documents are required?
+* How do I apply?
+* What benefits does this scheme provide?
+* Are there alternatives?
+
+The assistant responds using scheme-specific context from the database.
+
+---
+
+## Personalized Dashboard
+
+Users receive:
+
+* Recommended opportunities
+* Eligibility insights
+* Profile snapshots
+* Scheme details
+* Application information
+
+---
+
+## Privacy-First Design
+
+Govt Compass follows a privacy-conscious architecture.
+
+We do not require:
+
+* Aadhaar
+* PAN
+* Phone numbers
+* Permanent user accounts
+
+User onboarding operates through temporary anonymous sessions.
+
+---
+
+# Dataset & Curation
+
+Govt Compass is built on top of the MyScheme India Government Welfare Schemes dataset:
+
+https://www.kaggle.com/datasets/elchemist/myscheme-india-govt-welfare-schemes
+
+### Dataset Statistics
+
+| Metric                                      | Count  |
+| ------------------------------------------- | ------ |
+| Total Opportunities Available               | 4,700+ |
+| Currently Curated & Integrated              | 2,000+ |
+| Remaining Opportunities for Future Curation | 2,700+ |
+
+During the hackathon, we focused on curating and structuring approximately 2,000 opportunities to ensure:
+
+* Better data quality
+* Improved recommendation accuracy
+* Cleaner eligibility analysis
+* More reliable AI responses
+
+Future versions will expand coverage to the remaining 2,700+ opportunities.
+
+---
+
+# Architecture
+
+```text
+User
+  ↓
+Conversational Onboarding
+  ↓
+Anonymous Session Engine
+  ↓
+Profile Builder
+  ↓
+AI Matching Engine
+  ↓
+Government Opportunity Database
+  ↓
+Recommendation Engine
+  ↓
+Dashboard & AI Assistant
+```
+
+---
+
+# AI Infrastructure
+
+Govt Compass uses OpenRouter as its AI gateway.
+
+To improve reliability and maintain responsiveness during concurrent usage, the platform implements a custom request orchestration layer.
+
+### Request Distribution
+
+Instead of relying on a single API credential, Govt Compass maintains a pool of OpenRouter API keys and distributes requests using a round-robin rotation strategy.
+
+Benefits:
+
+* Improved throughput
+* Reduced rate-limit bottlenecks
+* Better fault tolerance
+* More reliable AI responses
+* Increased availability during peak usage
+
+### AI Capabilities
+
+The AI layer is responsible for:
+
+* Profile understanding
+* Semantic scheme matching
+* Eligibility reasoning
+* Conversational assistance
+* Recommendation generation
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* React.js
+* Vite
+* Tailwind CSS
+* Framer Motion
+* Lucide React
+
+## Backend
+
+* Node.js
+* Express.js
+
+## Database
+
+* MongoDB
+* Mongoose
+
+## AI Layer
+
+* OpenRouter
+* Large Language Models
+
+---
+
+# Project Structure
 
 ```text
 GovtCompass/
-├── client/                 # React frontend application
+│
+├── client/
 │   ├── public/
 │   ├── src/
-│   │   ├── api/            # API service calls
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Application routes/pages
-│   │   └── ...
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── hooks/
+│   │   ├── context/
+│   │   └── routes/
 │   ├── package.json
 │   └── vite.config.js
-├── server/                 # Express backend application
+│
+├── server/
 │   ├── src/
-│   │   ├── config/         # Database and app configurations
-│   │   ├── controllers/    # Route handlers
-│   │   ├── middleware/     # Express middlewares (auth, validation)
-│   │   ├── models/         # Mongoose schemas
-│   │   ├── routes/         # API route definitions
-│   │   ├── services/       # Core business logic and AI integrations
-│   │   └── sessions/       # In-memory session management
-│   ├── server.js           # Entry point
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── sessions/
+│   │   └── utils/
+│   ├── server.js
 │   └── package.json
+│
 └── README.md
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
+# Getting Started
 
-*   Node.js (v18 or higher recommended)
-*   MongoDB instance (local or Atlas)
-*   OpenRouter API Key
+## Prerequisites
 
-### Installation
+* Node.js 18+
+* MongoDB Atlas or Local MongoDB
+* OpenRouter API Keys
 
-1.  **Clone the repository**
-2.  **Install Dependencies**
-    *   For the server:
-        ```bash
-        cd server
-        npm install
-        ```
-    *   For the client:
-        ```bash
-        cd client
-        npm install
-        ```
+---
 
-### Configuration
+## Backend Setup
 
-1.  **Backend Environment Variables:**
-    Create a `.env` file in the `server` directory:
-    ```env
-    PORT=5000
-    MONGO_URI=your_mongodb_connection_string
-    OPENROUTER_API_KEY=your_openrouter_api_key
-    CORS_ORIGIN=http://localhost:5173
-    API_KEY=your_custom_api_key_for_client_auth
-    ```
+```bash
+cd server
+npm install
+```
 
-2.  **Frontend Environment Variables:**
-    Create a `.env` file in the `client` directory:
-    ```env
-    VITE_API_URL=http://localhost:5000
-    VITE_API_KEY=your_custom_api_key_for_client_auth
-    ```
+Create a `.env` file:
 
-### Running the Application
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+OPENROUTER_API_KEY=your_openrouter_api_key
+CORS_ORIGIN=http://localhost:5173
+API_KEY=your_custom_api_key
+```
 
-1.  **Start the Backend Server:**
-    ```bash
-    cd server
-    npm run dev
-    ```
-    The server will start on `http://localhost:5000`.
+Run:
 
-2.  **Start the Frontend Development Server:**
-    ```bash
-    cd client
-    npm run dev
-    ```
-    The client will be accessible at `http://localhost:5173`.
+```bash
+npm run dev
+```
 
-## 🧠 AI Integration
+---
 
-GovtCompass utilizes advanced AI capabilities to enhance the user experience:
-*   **Profile Extraction:** Uses AI to extract structured profile data from free-text user inputs.
-*   **Eligibility Scoring:** The core recommendation engine queries the database for potential matches and uses AI to read scheme descriptions and calculate an eligibility score (0-100) based on the user's specific context.
-*   **Conversational Q&A:** Allows users to ask follow-up questions about specific schemes, extracting answers directly from the official scheme data.
+## Frontend Setup
+
+```bash
+cd client
+npm install
+```
+
+Create a `.env` file:
+
+```env
+VITE_API_URL=http://localhost:5000
+VITE_API_KEY=your_custom_api_key
+```
+
+Run:
+
+```bash
+npm run dev
+```
+
+---
+
+# Current Limitations
+
+* Government eligibility criteria are often written in complex administrative language, making perfect automated interpretation challenging.
+* AI recommendations may occasionally miss highly nuanced eligibility conditions.
+* Only 2,000+ of the available 4,700+ opportunities have currently been curated and integrated.
+* Recommendation quality will continue to improve as additional opportunities are curated and structured.
+
+---
+
+# Future Roadmap
+
+* Expand coverage to all 4,700+ opportunities
+* Hybrid AI + rule-based eligibility engine
+* Multilingual support
+* Real-time scheme updates
+* Eligibility explainability layer
+* Application tracking
+* Opportunity alerts and reminders
+* Advanced filtering and personalization
+
+---
+
+# Live Demo
+
+https://govt-c0mpass.vercel.app/
+
+---
+
+# GitHub Repository
+
+https://github.com/blxckpxnther46/GovtCompass
+
+---
+
+## Built For
+
+Kalvium Hackathon 2026 🚀
+
+Helping citizens discover opportunities they may never have known existed.

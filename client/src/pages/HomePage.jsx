@@ -32,7 +32,7 @@ function HeroCard() {
   return (
     <div className="relative mt-8 group cursor-pointer animate-float">
       {/* Folder Tab */}
-      <div className="absolute -top-6 left-0 bg-[var(--surface-2)] w-2/5 h-8 rounded-t-lg border-t border-l border-r border-[var(--gold)]/20 flex items-center px-5 z-0 transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:bg-[var(--surface)] group-hover:border-[var(--gold)]/40">
+      <div className="absolute -top-6 left-0 bg-[var(--surface-2)] w-fit h-8 rounded-t-lg border-t border-l border-r border-[var(--gold)]/20 flex items-center px-5 z-0 transition-all duration-300 ease-out group-hover:-translate-y-2 group-hover:bg-[var(--surface)] group-hover:border-[var(--gold)]/40">
         <span className="text-[10px] font-semibold tracking-wide text-[var(--text-muted)] uppercase">ELIGIBILITY REPORT</span>
       </div>
 
@@ -495,7 +495,9 @@ export default function HomePage() {
                     </a>
                   </li>
                   <li>
-                    <span className="text-[var(--gold)] font-semibold font-mono">KSquad 128</span>
+                    <a href="https://www.linkedin.com/company/112415027" target="_blank" rel="noopener noreferrer" className="hover:underline text-[var(--gold)] font-semibold font-mono transition-all">
+                      KSquad 128
+                    </a>
                   </li>
                 </ul>
               </div>
