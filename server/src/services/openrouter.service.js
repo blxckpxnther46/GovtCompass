@@ -1,10 +1,16 @@
 let keyIndex = 0;
 
 export async function fetchOpenRouter(body) {
-  const keys = [
-    process.env.OPENROUTER_API_KEY,
-    process.env.OPENROUTER_API_KEY1
-  ].filter(Boolean);
+  // Dynamically load all configured keys matching OPENROUTER_API_KEY, OPENROUTER_API_KEY1, etc.
+  const keys = Object.keys(process.env)
+    .filter(k => /^OPENROUTER_API_KEY\d*$/.test(k))
+    .sort((a, b) => {
+      if (a === "OPENROUTER_API_KEY") return -1;
+      if (b === "OPENROUTER_API_KEY") return 1;
+      return a.localeCompare(b, undefined, { numeric: true });
+    })
+    .map(k => process.env[k])
+    .filter(Boolean);
 
   if (keys.length === 0) {
     throw new Error("No OpenRouter API keys configured");
