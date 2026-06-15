@@ -231,7 +231,12 @@ export default function SchemeDetailPage() {
 
           {/* AI Eligibility Check Section */}
           <div className="mt-8 bg-white border border-black/10 rounded-2xl p-6 md:p-8 shadow-sm">
-            <h3 className="text-xl font-display font-bold mb-2">Am I eligible for this scheme?</h3>
+            <h3 className="text-xl font-display font-bold mb-2 flex items-center justify-between">
+              <span>Am I eligible for this scheme?</span>
+              <span className="text-[10px] font-mono bg-[var(--gold)]/10 text-[var(--gold)] border border-[var(--gold)]/20 px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                AI Powered
+              </span>
+            </h3>
             
             {!eligibilityResult && !isCheckingEligibility && (
               <>
@@ -338,9 +343,16 @@ export default function SchemeDetailPage() {
         <div className="space-y-12">
           
           <section>
-            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center">
-              <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
-              Overview
+            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center justify-between w-full">
+              <span className="flex items-center">
+                <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
+                Overview
+              </span>
+              {isSimplified && (
+                <span className="text-[9px] text-[var(--gold)] font-bold uppercase tracking-wider bg-[var(--gold)]/10 px-2.5 py-0.5 rounded border border-[var(--gold)]/20 animate-pulse">
+                  ✨ AI Simplified
+                </span>
+              )}
             </h3>
             <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm min-h-[100px] flex flex-col justify-center">
               {isSimplified ? (
@@ -355,9 +367,16 @@ export default function SchemeDetailPage() {
           </section>
 
           <section>
-            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center">
-              <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
-              Benefits & Entitlements
+            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center justify-between w-full">
+              <span className="flex items-center">
+                <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
+                Benefits & Entitlements
+              </span>
+              {isSimplified && (
+                <span className="text-[9px] text-[var(--gold)] font-bold uppercase tracking-wider bg-[var(--gold)]/10 px-2.5 py-0.5 rounded border border-[var(--gold)]/20 animate-pulse">
+                  ✨ AI Simplified
+                </span>
+              )}
             </h3>
             <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm border-l-4 border-l-[var(--ok)] min-h-[100px] flex flex-col justify-center">
               {isSimplified ? (
@@ -372,9 +391,16 @@ export default function SchemeDetailPage() {
           </section>
 
           <section>
-            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center">
-              <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
-              Eligibility Criteria
+            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center justify-between w-full">
+              <span className="flex items-center">
+                <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
+                Eligibility Criteria
+              </span>
+              {isSimplified && (
+                <span className="text-[9px] text-[var(--gold)] font-bold uppercase tracking-wider bg-[var(--gold)]/10 px-2.5 py-0.5 rounded border border-[var(--gold)]/20 animate-pulse">
+                  ✨ AI Simplified
+                </span>
+              )}
             </h3>
             <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm min-h-[100px] flex flex-col justify-center">
               {isSimplified ? (
@@ -389,9 +415,16 @@ export default function SchemeDetailPage() {
           </section>
 
           <section>
-            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center">
-              <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
-              Application Process
+            <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--text-muted)] mb-4 flex items-center justify-between w-full">
+              <span className="flex items-center">
+                <span className="w-4 h-px bg-[var(--gold)] mr-3"></span>
+                Application Process
+              </span>
+              {isSimplified && (
+                <span className="text-[9px] text-[var(--gold)] font-bold uppercase tracking-wider bg-[var(--gold)]/10 px-2.5 py-0.5 rounded border border-[var(--gold)]/20 animate-pulse">
+                  ✨ AI Simplified
+                </span>
+              )}
             </h3>
             <div className="bg-white border border-black/5 rounded-2xl p-6 md:p-8 shadow-sm min-h-[100px] flex flex-col justify-center">
               {scheme.application_mode && (

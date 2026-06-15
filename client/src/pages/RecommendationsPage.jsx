@@ -261,16 +261,25 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onSave }) {
 export default function RecommendationsPage() {
   const navigate = useNavigate();
   
-  const [loading, setLoading] = useState(true);
+  const [results, setResults] = useState(() => {
+    const cached = sessionStorage.getItem('cachedRecommendations');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [loading, setLoading] = useState(() => {
+    return !sessionStorage.getItem('cachedRecommendations');
+  });
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
-  const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    return parseInt(sessionStorage.getItem('cachedRecommendationsPage')) || 1;
+  });
   const [fetchingPage, setFetchingPage] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const triggerLoadingSequence = () => {
+    sessionStorage.removeItem('cachedRecommendations');
+    sessionStorage.removeItem('cachedRecommendationsPage');
     setLoading(true);
     setLoadingMsgIdx(0);
     setError(null);
@@ -282,6 +291,9 @@ export default function RecommendationsPage() {
       setFetchingPage(true);
       const data = await getRecommendationsFromSession(pageNumber, 10);
       
+      sessionStorage.setItem('cachedRecommendations', JSON.stringify(data));
+      sessionStorage.setItem('cachedRecommendationsPage', pageNumber.toString());
+
       if (sessionStorage.getItem('hasSeenLoading')) {
         setResults(data);
         setLoading(false);
@@ -306,6 +318,8 @@ export default function RecommendationsPage() {
     try {
       setFetchingPage(true);
       const data = await getRecommendationsFromSession(pageNumber, 10);
+      sessionStorage.setItem('cachedRecommendations', JSON.stringify(data));
+      sessionStorage.setItem('cachedRecommendationsPage', pageNumber.toString());
       setResults(data);
     } catch (err) {
       console.error(err);
@@ -330,6 +344,8 @@ export default function RecommendationsPage() {
   const handleSaveProfile = async (newProfile) => {
     setIsEditModalOpen(false);
     setCurrentPage(1);
+    sessionStorage.removeItem('cachedRecommendations');
+    sessionStorage.removeItem('cachedRecommendationsPage');
     
     // 1. Submit each field and await so we don't trigger a fetch before saving!
     for (const [key, value] of Object.entries(newProfile)) {
@@ -348,7 +364,17 @@ export default function RecommendationsPage() {
 
   if (loading) {
     if (sessionStorage.getItem('hasSeenLoading')) {
-      return <div className="min-h-screen bg-[var(--bg)]"></div>; // Blank screen for a split second while instant fetch happens
+      return (
+        <div className="min-h-screen bg-[var(--bg)] flex flex-col items-center justify-center font-sans">
+          <div className="relative flex items-center justify-center w-16 h-16 mb-4">
+            <div className="absolute inset-0 border-2 border-transparent border-t-[var(--gold)] border-b-[var(--gold)] rounded-full animate-spin"></div>
+            <div className="w-4 h-4 bg-[var(--gold)] rounded-full animate-pulse"></div>
+          </div>
+          <p className="text-[var(--gold)] font-mono tracking-widest text-xs font-bold uppercase animate-pulse">
+            Loading Recommendations...
+          </p>
+        </div>
+      );
     }
     return (
       <div className="min-h-screen bg-[var(--bg-dark)] flex flex-col items-center justify-center p-6">

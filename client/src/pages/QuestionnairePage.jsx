@@ -67,6 +67,8 @@ export default function QuestionnairePage() {
     async function initSession() {
       try {
         sessionStorage.removeItem('hasSeenLoading');
+        sessionStorage.removeItem('cachedRecommendations');
+        sessionStorage.removeItem('cachedRecommendationsPage');
         await createSession();
         const res = await getAllQuestions();
         if (res.success && res.data.questions) {
